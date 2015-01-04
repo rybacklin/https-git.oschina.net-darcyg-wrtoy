@@ -1,0 +1,10 @@
+--- # 修复openwrt host编译Lua问题
+patchs:
+- patch:
+    path: /package/utils/lua/Makefile
+    items:
+    - name: 修复host编译Lua问题
+      orig: !!str
+        "\t\tCC=\"$(HOSTCC) -std=gnu99\" \\\n"
+      fix: !!str
+        "\t\tCC=\"$(HOSTCC) -std=gnu99 -fPIC\" \\\n"

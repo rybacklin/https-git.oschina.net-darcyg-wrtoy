@@ -1,0 +1,13 @@
+--- # 增加键盘鼠标支持
+patch:
+  path: /.config
+  items:
+  - name: 键鼠输入支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-hid=y,
+      CONFIG_PACKAGE_kmod-hid-generic=y,
+      CONFIG_PACKAGE_kmod-input-core=y,
+      CONFIG_PACKAGE_kmod-input-evdev=y,
+      CONFIG_PACKAGE_kmod-usb-hid=y,
+    ]
+    mode: config

@@ -1,0 +1,9 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+ip link add link eth0 eth1 type macvlan
+ifconfig eth1 hw ether 00:11:22:33:44:5E
+ifconfig eth1 up
+
+exit 0
+

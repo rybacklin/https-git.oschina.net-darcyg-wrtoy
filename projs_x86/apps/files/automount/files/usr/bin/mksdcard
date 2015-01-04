@@ -1,0 +1,57 @@
+#!/bin/sh
+
+sddev=/dev/mmcblk0
+sdmnt=/mnt/mmcblk0
+
+#p1_size=200
+#p1_size=211
+#p1_size=229
+p1_size=318
+
+[ ! -z "$1" ] && p1_size=$1
+
+[ ! -b $sddev ] && exit 0
+
+echo "umount /dev/mmcblk0p* .."
+
+[ -b ${sddev}p1 ] && umount ${sddev}p1 1>/dev/null 2>&1
+[ -b ${sddev}p2 ] && umount ${sddev}p2 1>/dev/null 2>&1
+[ -b ${sddev}p3 ] && umount ${sddev}p3 1>/dev/null 2>&1
+[ -b ${sddev}p4 ] && umount ${sddev}p4 1>/dev/null 2>&1
+
+sleep 1
+
+echo "sfdisk rebuild sdcard partition .."
+
+echo -e ",$p1_size,,-\n,,,-" | sfdisk --force -D -u MB $sddev 1>/dev/null 2>&1
+
+sleep 1
+
+echo "umount /dev/mmcblk0p* .."
+
+[ -b ${sddev}p1 ] && umount ${sddev}p1 1>/dev/null 2>&1
+[ -b ${sddev}p2 ] && umount ${sddev}p2 1>/dev/null 2>&1
+[ -b ${sddev}p3 ] && umount ${sddev}p3 1>/dev/null 2>&1
+[ -b ${sddev}p4 ] && umount ${sddev}p4 1>/dev/null 2>&1
+
+sleep 1
+
+echo "mkfs.ext4 /dev/mmcblk0p* .."
+
+[ -b ${sddev}p1 ] && ( echo " format ${sddev}p1 ." ; mkfs.ext4 ${sddev}p1 1>dev/null 2>&1 )
+[ -b ${sddev}p2 ] && ( echo " format ${sddev}p2 ." ; mkfs.ext4 ${sddev}p2 1>dev/null 2>&1 )
+[ -b ${sddev}p3 ] && ( echo " format ${sddev}p3 ." ; mkfs.ext4 ${sddev}p3 1>dev/null 2>&1 )
+[ -b ${sddev}p4 ] && ( echo " format ${sddev}p4 ." ; mkfs.ext4 ${sddev}p4 1>dev/null 2>&1 )
+
+sleep 1
+
+echo "clear /mnt/mmcblk0p* directory .."
+
+[ -d ${sdmnt}p1 ] && rm -Rf ${sdmnt}p1 1>dev/null 2>&1
+[ -d ${sdmnt}p2 ] && rm -Rf ${sdmnt}p2 1>dev/null 2>&1
+[ -d ${sdmnt}p3 ] && rm -Rf ${sdmnt}p3 1>dev/null 2>&1
+[ -d ${sdmnt}p4 ] && rm -Rf ${sdmnt}p4 1>dev/null 2>&1
+
+echo "restart fstab service .."
+
+/etc/init.d/fstab restart 1>/dev/null 2>&1

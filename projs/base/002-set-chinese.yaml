@@ -1,0 +1,32 @@
+--- # 默认打开wifi
+patch:
+  path: /feeds/luci/modules/base/root/etc/config/luci
+  items:
+  - name: 配置默认中文语言
+    orig: !!str
+      "config core main\n\
+      \toption lang auto\n\
+      "
+    fix: !!str
+      "config core main\n\
+      \toption lang zh_cn\n\
+      "
+      
+  - name: 设置luci默认路径
+    orig: !!str
+      "\toption mediaurlbase /luci-static/[a-zA-Z0-9\\-\\.\\/]*"
+    fix: !!str
+      "\toption mediaurlbase /luci-static/openwrt.org"
+    mode: regex,#skip,#debug,#source,#copy,#del
+    
+  - name: 内置luci中英文语言包
+    orig: !!str
+      "config internal languages\n\
+      \t\n\
+      "
+    fix: !!str
+      "config internal languages\n\
+      \toption zh_cn Chinese\n\
+      \toption en English\n\
+      \t\n\
+      "

@@ -1,0 +1,27 @@
+--- # 默认.config调整
+patch:
+  path: /.config
+  items:
+  - name: 配置BOOT模式
+    cfgs: [
+      CONFIG_VDI_IMAGES=y,
+      CONFIG_TARGET_IMAGES_PAD=y,
+      CONFIG_TARGET_ROOTFS_PARTSIZE=512,
+      CONFIG_IMAGEOPT=n,
+      CONFIG_PREINITOPT=n,
+      #CONFIG_FEED_commonpack=n,
+      CONFIG_PACKAGE_block-mount=y,
+      CONFIG_PACKAGE_kmod-ipt-ipopt=y,
+      CONFIG_PACKAGE_iptables-mod-ipopt=y
+    ]
+    mode: config
+  - name: 配置USB模式
+    cfgs: [
+      CONFIG_PACKAGE_kmod-usb-ohci=y,
+      CONFIG_PACKAGE_kmod-usb-serial-sierrawireless=y,
+      CONFIG_PACKAGE_kmod-usb2=y,
+      CONFIG_PACKAGE_kmod-usb2-pci=y,
+      CONFIG_PACKAGE_usbreset=y,
+      CONFIG_PACKAGE_usbutils=y,
+    ]
+    mode: config

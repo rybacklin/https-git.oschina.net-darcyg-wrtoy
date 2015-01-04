@@ -1,0 +1,110 @@
+--- # 默认.config调整
+patch:
+  path: /.config
+  items:
+  - name: 启用界面
+    cfgs: [
+      CONFIG_TARGET_PREINIT_IFNAME="",
+    ]
+    mode: config
+  - name: 换ip（网关）
+    cfgs: [
+      CONFIG_TARGET_PREINIT_IP="192.168.1.1",
+    ]
+    mode: config
+  - name: 换掩码地址
+    cfgs: [
+      CONFIG_TARGET_PREINIT_NETMASK="255.255.255.0",
+    ]
+    mode: config
+  - name: 换广播地址
+    cfgs: [
+      CONFIG_TARGET_PREINIT_BROADCAST="192.168.1.255",
+    ]
+    mode: config
+  - name: 启用自定义busybox
+    cfgs: [
+      CONFIG_BUSYBOX_CUSTOM=y,
+    ]
+    mode: config
+  - name: 启用自定义busybox
+    orig: !!str
+      "CONFIG_BUSYBOX_DEFAULT_LOGGER=y\n# CONFIG_PACKAGE_ca-certificates is not set\n"
+    fix: !!str
+      "CONFIG_BUSYBOX_DEFAULT_LOGGER=y\n{replace_data}# CONFIG_PACKAGE_ca-certificates is not set\n"
+    defs: [
+      {id : replace_data,src: config.busybox_custom}
+    ]
+  - name: 设置busybox安装ip/ip link
+    cfgs: [
+      CONFIG_BUSYBOX_CONFIG_IP=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_IP,
+        y: [
+          CONFIG_BUSYBOX_CONFIG_FEATURE_IP_ADDRESS,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_IP_LINK,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_IP_ROUTE,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_IP_TUNNEL,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_IP_RULE,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_IP_RARE_PROTOCOLS,
+        ],
+        n: [
+          CONFIG_BUSYBOX_CONFIG_IPADDR,
+          CONFIG_BUSYBOX_CONFIG_IPLINK,
+          CONFIG_BUSYBOX_CONFIG_IPROUTE,
+          CONFIG_BUSYBOX_CONFIG_IPTUNNEL,
+          CONFIG_BUSYBOX_CONFIG_IPRULE,
+        ]
+      }
+    ]
+    mode: config
+  - name: 设置busybox诸多内置工具
+    cfgs: [
+      CONFIG_BUSYBOX_CONFIG_BASE64=y,
+      CONFIG_BUSYBOX_CONFIG_USE_BB_CRYPT=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_USE_BB_CRYPT,
+        c: [
+          CONFIG_BUSYBOX_CONFIG_USE_BB_CRYPT_SHA=y,
+        ]
+      },
+      CONFIG_BUSYBOX_CONFIG_ADDUSER=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_ADDUSER,
+        c: [
+          CONFIG_BUSYBOX_CONFIG_FEATURE_ADDUSER_LONG_OPTIONS=y,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_CHECK_NAMES=y,
+          CONFIG_BUSYBOX_CONFIG_FIRST_SYSTEM_ID=0,
+          CONFIG_BUSYBOX_CONFIG_LAST_SYSTEM_ID=0,
+        ]
+      },
+      CONFIG_BUSYBOX_CONFIG_ADDGROUP=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_ADDGROUP,
+        c: [
+          CONFIG_BUSYBOX_CONFIG_FEATURE_ADDGROUP_LONG_OPTIONS=y,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_ADDUSER_TO_GROUP=y,
+        ]
+      },
+      CONFIG_BUSYBOX_CONFIG_DELUSER=y,
+      CONFIG_BUSYBOX_CONFIG_DELGROUP=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_DELGROUP,
+        c: [
+          CONFIG_BUSYBOX_CONFIG_FEATURE_DEL_USER_FROM_GROUP=y,
+        ]
+      },
+      CONFIG_BUSYBOX_CONFIG_SU=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_SU,
+        c: [
+          CONFIG_BUSYBOX_CONFIG_FEATURE_SU_SYSLOG=y,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_SU_CHECKS_SHELLS=y,
+        ]
+      },
+      CONFIG_BUSYBOX_CONFIG_SULOGIN=y,
+      CONFIG_BUSYBOX_CONFIG_LSUSB=y,
+
+    ]
+    mode: config

@@ -1,0 +1,10 @@
+--- # 修复openwrt编译iconv错误问题
+patch:
+  path: /tools/pkg-config/Makefile
+  items:
+  - name: 屏蔽/pkg-config工具的iconv处理
+    orig: !!str
+      "HOST_CONFIGURE_ARGS += --with-internal-glib\n"
+    fix: !!str
+      "HOST_CONFIGURE_ARGS += --with-internal-glib --enable-iconv=no --with-libiconv=gnu\n"
+    mode: skip

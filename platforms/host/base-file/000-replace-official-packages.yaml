@@ -1,0 +1,74 @@
+--- # 修复openwrt编译iconv错误问题
+patchs:
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 替换packages包源
+      orig: !!str
+        "src-git packages https://github.com/openwrt/packages.git\n"
+      fix: !!str
+        "src-git packages https://git.oschina.net/darcyg/openwrt-official-packages.git\n"
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 替换packages包源
+      orig: !!str
+        "src-git packages https://github.com/openwrt/packages.git\n"
+      fix: !!str
+        "src-git packages https://git.oschina.net/darcyg/openwrt-official-packages.git\n"
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 替换luci包源
+      orig: !!str
+        "src-git luci https://github.com/openwrt/luci.git\n"
+      fix: !!str
+        "src-git luci https://git.oschina.net/darcyg/openwrt-luci.git\n"
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 替换routing包源
+      orig: !!str
+        "src-git routing https://github.com/openwrt-routing/packages.git\n"
+      fix: !!str
+        "src-git routing https://git.oschina.net/darcyg/openwrt-packages-routing.git\n"
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 替换telephony包源
+      orig: !!str
+        "src-git telephony https://github.com/openwrt/telephony.git\n"
+      fix: !!str
+        "src-git telephony https://git.oschina.net/darcyg/openwrt-packages-telephony.git\n"
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 替换management包源
+      orig: !!str
+        "src-git management https://github.com/openwrt-management/packages.git\n"
+      fix: !!str
+        "src-git management https://git.oschina.net/darcyg/openwrt-packages-management.git\n"
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 替换oldpackages包源
+      orig: !!str
+        "#src-git oldpackages http://git.openwrt.org/packages.git\n"
+      fix: !!str
+        "src-git oldpackages https://git.oschina.net/darcyg/openwrt-official-old-packages.git\n"
+
+- patch:
+    path: /feeds.conf
+    items:
+    - name: 替换oldpackages包源
+      orig: !!str
+        "#src-git oldpackages http://git.openwrt.org/packages.git\n"
+      fix: !!str
+        "src-git oldpackages http://git.openwrt.org/packages.git\n"

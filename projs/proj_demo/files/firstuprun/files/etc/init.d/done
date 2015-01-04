@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=95
+boot() {
+	[ -d /tmp/root ] && mount_root done
+
+	# process user commands
+	[ -f /etc/rc.local ] && {
+	  sh /etc/rc.local
+	}
+
+	[ -d /etc/rc.local.d ] && {
+	  local exec_file
+	  for exec_file in /etc/rc.local.d/*; do
+	    [ -f $exec_file ] && sh $exec_file
+	  done
+	}
+
+	# set leds to normal state
+	. /etc/diag.sh
+	set_state done
+}

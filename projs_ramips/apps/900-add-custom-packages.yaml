@@ -1,0 +1,23 @@
+--- # 安装dg-wrt-packages
+
+patchs:
+- patch:
+    path: /feeds
+    items:
+    - name: 复制项目文件到/custom-feeds/automount
+      base: /custom-feeds/
+      orig: [
+        {
+          src: automount,
+          dst: common-system-fix/automount
+        }
+      ]
+      mode: copy,#debug
+- patch:
+    path: /.config
+    items:
+    - name: automount支持
+      cfgs: [
+        CONFIG_PACKAGE_automount=y,
+      ]
+      mode: config

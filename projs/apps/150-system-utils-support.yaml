@@ -1,0 +1,53 @@
+--- # 系统工具支持
+patch:
+  path: /.config
+  items:
+  - name: 控制台基本库支持
+    cfgs: [
+      CONFIG_PACKAGE_libncurses=y,
+      CONFIG_PACKAGE_terminfo=y,
+      CONFIG_PACKAGE_libreadline=y,
+    ]
+    mode: config
+  - name: HTOP工具支持
+    cfgs: [
+      CONFIG_PACKAGE_htop=y,
+    ]
+    mode: config
+  - name: nano工具支持
+    cfgs: [
+      CONFIG_PACKAGE_nano=y,
+    ]
+    mode: config
+  - name: vim工具支持
+    cfgs: [
+      CONFIG_PACKAGE_vim=y,
+      CONFIG_PACKAGE_vim-full=n,
+    ]
+    mode: config
+  - name: unrar,zip,unzip压缩工具支持
+    cfgs: [
+      CONFIG_PACKAGE_uclibcxx=y,
+      CONFIG_PACKAGE_unrar=y,
+      CONFIG_PACKAGE_unzip=y,
+      CONFIG_PACKAGE_zip=y,
+    ]
+    mode: config
+  - name: minicom,script-utils工具支持
+    cfgs: [
+      CONFIG_PACKAGE_minicom=y,
+      CONFIG_PACKAGE_script-utils=y,
+    ]
+    mode: config
+  - name: minicom,script-utils工具支持
+    cfgs: [
+      CONFIG_PACKAGE_zoneinfo-asia=y,
+      CONFIG_PACKAGE_zoneinfo-core=y,
+      CONFIG_PACKAGE_zoneinfo-simple=y,
+    ]
+    mode: config
+  - name: cpusage工具支持
+    cfgs: [
+      CONFIG_PACKAGE_cpusage=y,
+    ]
+    mode: config

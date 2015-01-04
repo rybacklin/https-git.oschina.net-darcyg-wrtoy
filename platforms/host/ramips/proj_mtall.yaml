@@ -1,0 +1,112 @@
+--- # 默认.config调整系统
+patchs:
+- patch:
+    #path: /.config
+    path: /target/linux/ramips/mt7620/config-3.14
+    items:
+    - name: 内核MMC/SD卡支持(mt7620)
+      cfgs: [
+        CONFIG_PACKAGE_kmod-sdhci=y,
+        CONFIG_PACKAGE_kmod-sdhci-mt7620=y,
+        CONFIG_PACKAGE_kmod-mmc-over-gpio=y,
+        {
+          i: CONFIG_PACKAGE_kmod-mmc-over-gpio,
+          c: [
+            CONFIG_KMOD_MMC_OVER_GPIO_DI_PIN=1,
+            CONFIG_KMOD_MMC_OVER_GPIO_DO_PIN=3,
+            CONFIG_KMOD_MMC_OVER_GPIO_CLK_PIN=4,
+            CONFIG_KMOD_MMC_OVER_GPIO_CS_PIN=7,
+          ]
+        }
+      ]
+      mode: config
+- patch:
+    path: /.config
+    items:
+    - name: 启用MTALL-mt7620a-DevBoard
+      cfgs: [
+        CONFIG_TARGET_ramips_mt7620_MTALL=y,
+      ]
+      mode: config
+- patch:
+    path: /target/linux/ramips/base-files/lib/ramips.sh
+    items:
+    - name: 增加自定义设备MTALL(1) 增加定制设备名称-注意匹配
+      orig: !!str
+        "\tcase \"$machine\" in\n"
+      fix: !!str
+        "\t*\"MTALL\")\n\
+        \t\tname=\"mtall\"\n\
+        \t\t;;\n\n"
+      mode: add
+- patch:
+    path: /target/linux/ramips/base-files/lib/upgrade/platform.sh
+    items:
+    - name: 增加自定义设备MTALL(2) 增加定制设备
+      orig: !!str
+        "\tcase \"$board\" in\n"
+      fix: !!str
+        "\tmtall | \\\n"
+      mode: add
+- patch:
+    path: /target/linux/ramips/image/Makefile
+    items:
+    - name: 增加自定义设备MTALL(4) 增加定制设备编译参数
+      orig: !!str
+        "Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp_n53,RP-N53)\n"
+      fix: !!str
+        "\nImage/Build/Profile/MTALL=$(call BuildFirmware/Default32M/$(1),$(1),mtall,MTALL)\n\n"
+      mode: add
+    - name: 增加自定义设备MTALL(5) 增加定制设备编译
+      orig: !!str
+        "\t$(call Image/Build/Profile/RP-N53,$(1))\n"
+      fix: !!str
+        "\t$(call Image/Build/Profile/MTALL,$(1))\n"
+      mode: add
+- patch:
+    path: /target
+    items:
+    - name: 增加自定义设备MTALL(6) 主板IO配置dts,Menuconfig显示
+      base: /target/linux/ramips/
+      orig: [
+        {
+          src: profiles/MTALL.dts,
+          dst: dts/MTALL.dts
+        },
+        {
+          src: profiles/mtall.mk,
+          dst: mt7620/profiles/mtall.mk
+        },
+      ]
+      mode: copy,#debug
+- patch:
+    used: no
+    path: /target/linux/ramips/base-files/etc/uci-defaults/02_network
+    items:
+    - name: 增加自定义设备MTALL(8)A 设备uci-default配置（老方法）
+      orig: !!str
+        "\tcase $board in\n"
+      fix: !!str
+        "\tmtall)\n\
+        \t\t#ucidef_set_interfaces_lan_wan \"eth0\" \"eth1\"\n\
+        \t\t#ucidef_set_interface_wan \"eth0.1\" \n\
+        \t\tucidef_set_interface_lan \"eth0.1\" \n\
+        \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"4 6t\"\n\
+        \t\t;;\n\n"
+      mode: add,#debug
+- patch:
+    path: /target/linux/ramips/base-files/etc/board.d/02_network
+    items:
+    - name: 增加自定义设备MTALL(8)B 设备board.d配置（新方法）
+      orig: !!str
+        "\tcase $board in\n"
+      fix: !!str
+        "\tmtall)\n\
+        \t\t#ucidef_set_interfaces_lan_wan \"eth0\" \"eth1\"\n\
+        \t\t#ucidef_set_interface_wan\"eth0.1\" \n\
+        \t\tucidef_set_interface_lan\"eth0.1\" \n\
+        \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"4 6t\"\n\
+        \t\t;;\n\n"
+      mode: add,#debug

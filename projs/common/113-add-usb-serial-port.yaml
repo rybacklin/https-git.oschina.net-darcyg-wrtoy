@@ -1,0 +1,35 @@
+--- # 增加USB串口支持
+patch:
+  path: /.config
+  items:
+  - name: USB串口支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-usb-serial=y,
+      CONFIG_PACKAGE_kmod-usb-uhci=y,
+      {
+        i: CONFIG_PACKAGE_kmod-usb-serial,
+        c: [
+          CONFIG_PACKAGE_kmod-usb-serial=y,
+          CONFIG_PACKAGE_kmod-usb-serial-ark3116=n,
+          CONFIG_PACKAGE_kmod-usb-serial-belkin=n,
+          CONFIG_PACKAGE_kmod-usb-serial-ch341=y,
+          CONFIG_PACKAGE_kmod-usb-serial-cp210x=y,
+          CONFIG_PACKAGE_kmod-usb-serial-cypress-m8=n,
+          CONFIG_PACKAGE_kmod-usb-serial-ftdi=y,
+          CONFIG_PACKAGE_kmod-usb-serial-ipw=n,
+          CONFIG_PACKAGE_kmod-usb-serial-keyspan=n,
+          CONFIG_PACKAGE_kmod-usb-serial-mct=n,
+          CONFIG_PACKAGE_kmod-usb-serial-mos7720=n,
+          CONFIG_PACKAGE_kmod-usb-serial-motorola-phone=n,
+          CONFIG_PACKAGE_kmod-usb-serial-option=y,
+          CONFIG_PACKAGE_kmod-usb-serial-oti6858=n,
+          CONFIG_PACKAGE_kmod-usb-serial-pl2303=y,
+          CONFIG_PACKAGE_kmod-usb-serial-qualcomm=y,
+          CONFIG_PACKAGE_kmod-usb-serial-sierrawireless=n,
+          CONFIG_PACKAGE_kmod-usb-serial-ti-usb=n,
+          CONFIG_PACKAGE_kmod-usb-serial-visor=n,
+          CONFIG_PACKAGE_kmod-usb-serial-wwan=y,
+        ]
+      }
+    ]
+    mode: config

@@ -1,0 +1,32 @@
+--- # 默认.config调整
+patchs:
+  #used: no
+  platform: [ x86, rpi, ramips ]
+  projs: [ ]
+  items:
+  - patch:
+      path: /.config
+      items:
+      - name: 设置安装macvlan
+        cfgs: [
+          CONFIG_PACKAGE_kmod-macvlan=y
+        ]
+        mode: config
+  - patch:
+      path: /package
+      items:
+      - name: 增加netifd协议macvlan,setpvid配置
+        base: /package/network/config/netifd/files/lib/netifd/
+        orig: [
+          {
+            src: macvlan.sh,
+            dst: proto/macvlan.sh,
+            chmod: 0775
+          },
+          {
+            src: setpvid.sh,
+            dst: proto/setpvid.sh,
+            chmod: 0775
+          }
+        ]
+        mode: copy,#debug

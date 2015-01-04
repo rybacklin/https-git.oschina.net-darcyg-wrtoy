@@ -1,0 +1,48 @@
+--- # 默认.config调整系统
+patchs:
+- patch:
+    #path: /.config
+    path: /target/linux/ramips/mt7620/config-3.14
+    items:
+    - name: 内核MMC/SD卡支持(mt7620)
+      cfgs: [
+        CONFIG_PACKAGE_kmod-sdhci=n,
+        CONFIG_PACKAGE_kmod-sdhci-mt7620=n,
+        CONFIG_PACKAGE_kmod-mmc-over-gpio=n,
+        {
+          i: CONFIG_PACKAGE_kmod-mmc-over-gpio,
+          c: [
+            CONFIG_KMOD_MMC_OVER_GPIO_DI_PIN=1,
+            CONFIG_KMOD_MMC_OVER_GPIO_DO_PIN=3,
+            CONFIG_KMOD_MMC_OVER_GPIO_CLK_PIN=4,
+            CONFIG_KMOD_MMC_OVER_GPIO_CS_PIN=7,
+          ]
+        }
+      ]
+      mode: config
+- patch:
+    path: /.config
+    items:
+    - name: 启用MTALL-mt7620a-DevBoard
+      cfgs: [
+        CONFIG_TARGET_ramips_mt7620_WRTNODE=y,
+      ]
+      mode: config
+- patch:
+    path: /target
+    items:
+    - name: 增加自定义设备 WrtNode 主板IO配置Menuconfig显示
+      base: /target/linux/ramips/
+      orig: [
+        {
+          src: profiles/wrtnode.mk,
+          dst: mt7620/profiles/wrtnode.mk
+        },
+      ]
+      mode: copy,#debug
+- patch:
+    path: /feeds.conf
+    items:
+    - name: 加入 wrtnode packages 包的源
+      fix: src-git wrtnode https://github.com/WRTnode/openwrt-packages.git
+      mode: add

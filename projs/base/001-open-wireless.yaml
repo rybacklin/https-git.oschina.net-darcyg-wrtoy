@@ -1,0 +1,11 @@
+--- # 默认打开wifi
+patch:
+  path: /package/kernel/mac80211/files/lib/wifi/mac80211.sh
+  items:
+  - name: 默认打开无线
+    orig: !!str
+      "\t# REMOVE THIS LINE TO ENABLE WIFI:\n\
+      \toption disabled 1"
+    fix: !!str
+      "\t# REMOVE THIS LINE TO ENABLE WIFI:\n\
+      #\toption disabled 1"

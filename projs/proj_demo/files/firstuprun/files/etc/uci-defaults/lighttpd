@@ -1,0 +1,27 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+
+ligcfg=/etc/lighttpd/lighttpd.conf
+phpcfg=/etc/php.ini
+
+if [ -f $ligcfg ]; then
+    [ -f $ligcfg.def ] && mv $ligcfg.def $ligcfg
+    [ -f $phpcfg.def ] && mv $phpcfg.def $phpcfg
+    sed -i "s#^server.document-root = \"/www/\"#server.document-root = \"/mnt/www\"#" $ligcfg
+    #sed -i "s/^#server.port = 81/server.port = 8080/" $ligcfg
+    sed -i "s#^doc_root = \"/www\"#doc_root = \"/mnt/www\"#" $phpcfg
+    #/etc/init.d/php5-fastcgi enable
+    #/etc/init.d/php5-fastcgi restart
+    /etc/init.d/lighttpd enable
+    /etc/init.d/lighttpd restart
+else
+    rm -rf /etc/lighttpd/
+fi
+
+echo "================>lighttpd" >> /initlog
+
+exit 0

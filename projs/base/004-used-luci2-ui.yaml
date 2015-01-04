@@ -1,0 +1,43 @@
+--- # 修复openwrt编译iconv错误问题
+patchs:
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 加入luci2
+      fix: src-git luci2 git://git.openwrt.org/project/luci2/ui.git
+      mode: add
+- patch:
+    #used: no
+    path: /.config
+    items:
+    - name: 配置luci2
+      cfgs: [
+        CONFIG_PACKAGE_rpcd=y,
+        {
+          i: CONFIG_PACKAGE_rpcd,
+          c: [
+            CONFIG_PACKAGE_rpcd-mod-file=y,
+            CONFIG_PACKAGE_rpcd-mod-iwinfo=y,
+          ]
+        },
+        CONFIG_PACKAGE_libiwinfo=y,
+        CONFIG_PACKAGE_luci2=n,
+      ]
+      mode: config
+- patch:
+    path: /.config
+    items:
+    - name: 启用uhttpd
+      cfgs: [
+        CONFIG_PACKAGE_uhttpd=y,
+        {
+          i: CONFIG_PACKAGE_uhttpd_debug,
+          c: [
+            CONFIG_PACKAGE_uhttpd-mod-lua=y,
+            CONFIG_PACKAGE_uhttpd-mod-tls=n,
+            CONFIG_PACKAGE_uhttpd-mod-ubus=y,
+          ]
+        }
+      ]
+      mode: config

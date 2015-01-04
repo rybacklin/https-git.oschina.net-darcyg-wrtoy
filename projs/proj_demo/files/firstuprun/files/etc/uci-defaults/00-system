@@ -1,0 +1,80 @@
+#!/bin/sh
+
+syscfg=/etc/config/system
+
+[ ! -f $syscfg ] && exit 0
+#touch $syscfg
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+MACLAST6D=`ifconfig -a eth0 | grep eth0 | awk '{print $5}' | awk -F : '{print $4""$5""$6}'`
+
+uci set system.@system[0].hostname=MTALL-DEVBOARD-$MACLAST6D
+uci set system.@system[0].timezone=CST-8
+
+uci commit system
+
+echo "admin:*:1000:65534:admin:/var:/bin/false" >> /etc/passwd
+echo "admin:*:0:0:99999:7:::" >> /etc/shadow
+
+pwdAdmin=$(echo "MTIzNDU2NzgK" | base64 -d)
+echo -e "$pwdAdmin\n$pwdAdmin" | passwd admin
+
+uci set rpcd.@login[0].username=admin
+uci set rpcd.@login[0].password=\$p\$admin
+
+uci commit rpcd
+
+/ect/init.d/system restart
+
+initcfg='/etc/device_info'
+if [ -f $initcfg ]; then
+  DEVICE_MANUFACTURER='MTALL-DEVBOARD-($MACLAST6D)'
+  DEVICE_PRODUCT='MTALL-DEVBOARD'
+  DEVICE_REVISION='v1.0'
+
+  sed -i "s@^DEVICE_MANUFACTURER='OpenWrt'@#DEVICE_MANUFACTURER='$DEVICE_MANUFACTURER'@" $initcfg
+  sed -i "s@^DEVICE_PRODUCT='Generic'@#DEVICE_PRODUCT='$DEVICE_PRODUCT'@" $initcfg
+  sed -i "s@^DEVICE_REVISION='v0'@#DEVICE_MANUFACTURER='$DEVICE_REVISION'@" $initcfg
+fi
+
+VERSION="v1.0"
+
+initcfg='/etc/device_info'
+if [ -f $initcfg ]; then
+  DEVICE_MANUFACTURER='MTALL-DEVBOARD($MACLAST6D)'
+  DEVICE_PRODUCT='MTALL-DEVBOARD'
+  DEVICE_REVISION=$VERSION
+
+  sed -i "s@^DEVICE_MANUFACTURER='OpenWrt'@#DEVICE_MANUFACTURER='$DEVICE_MANUFACTURER'@" $initcfg
+  sed -i "s@^DEVICE_PRODUCT='Generic'@#DEVICE_PRODUCT='$DEVICE_PRODUCT'@" $initcfg
+  sed -i "s@^DEVICE_REVISION='v0'@#DEVICE_MANUFACTURER='$DEVICE_REVISION'@" $initcfg
+fi
+
+initcfg='/etc/openwrt_release'
+if [ -f $initcfg ]; then
+  DISTRIB_ID='MTALL-DEVBOARD'
+  DISTRIB_RELEASE='MTALL-DEVBOARD'
+  DISTRIB_REVISION=$VERSION
+  DISTRIB_CODENAME='Darcy.Gong & David.Gong'
+  DISTRIB_TARGET='ramips/mt7620/MTALL'
+  DISTRIB_DESCRIPTION='MTALL-DEVBOARD($MACLAST6D)'
+  DISTRIB_TAINTS='no-all busybox'
+
+  sed -i "s@^DISTRIB_ID='OpenWrt'@#DISTRIB_ID='$DISTRIB_ID'@" $initcfg
+  sed -i "s@^DISTRIB_RELEASE='Bleeding Edge'@#DISTRIB_RELEASE='$DISTRIB_RELEASE'@" $initcfg
+  sed -i "s@^DISTRIB_REVISION='unknown'@#DISTRIB_REVISION='$DISTRIB_REVISION'@" $initcfg
+  sed -i "s@^DISTRIB_CODENAME='chaos_calmer'@#DISTRIB_CODENAME='$DISTRIB_CODENAME'@" $initcfg
+  sed -i "s@^DISTRIB_TARGET='x86/generic'@#DISTRIB_TARGET='$DISTRIB_TARGET'@" $initcfg
+  sed -i "s@^DISTRIB_DESCRIPTION='OpenWrt Chaos Calmer unknown'@#DISTRIB_DESCRIPTION='$DISTRIB_DESCRIPTION'@" $initcfg
+  sed -i "s@^DISTRIB_TAINTS='no-all busybox'@#DISTRIB_TAINTS='$DISTRIB_TAINTS'@" $initcfg
+fi
+
+initcfg='/etc/openwrt_version'
+if [ -f $initcfg ]; then
+  echo "$VERSION" > $initcfg
+fi
+
+echo "================>system" >> /initlog

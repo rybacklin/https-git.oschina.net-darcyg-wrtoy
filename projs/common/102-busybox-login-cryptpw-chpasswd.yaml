@@ -1,0 +1,27 @@
+--- # 默认.config调整
+patch:
+  path: /.config
+  used: no
+  items:
+  - name: 启用自定义busybox
+    cfgs: [
+      CONFIG_BUSYBOX_CUSTOM=y,
+    ]
+    mode: config
+  - name: 启用自定义busybox-login
+    cfgs: [
+      CONFIG_BUSYBOX_CONFIG_LOGIN=y,
+      CONFIG_BUSYBOX_CONFIG_CRYPTPW=y,
+      CONFIG_BUSYBOX_CONFIG_CHPASSWD=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_LOGIN,
+        c: [
+          CONFIG_BUSYBOX_CONFIG_LOGIN_SESSION_AS_CHILD=n,
+          CONFIG_BUSYBOX_CONFIG_PAM=n,
+          CONFIG_BUSYBOX_CONFIG_LOGIN_SCRIPTS=n,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_NOLOGIN=n,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_SECURETTY=n,
+        ]
+      }
+    ]
+    mode: config

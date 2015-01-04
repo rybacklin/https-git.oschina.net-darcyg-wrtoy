@@ -1,0 +1,8 @@
+--- # 默认.config调整
+patch:
+  path: /package/base-files/files/lib/functions/uci-defaults.sh
+  items:
+  - name: 启用自定义网关192.168.79.6
+    orig: set network.lan.ipaddr='[0-9\.]*'
+    fix: set network.lan.ipaddr='192.168.79.6'
+    mode: regex

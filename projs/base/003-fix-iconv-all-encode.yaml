@@ -1,0 +1,21 @@
+--- # 修复openwrt编译iconv错误问题
+patchs:
+- patch:
+    path: /package
+    items:
+    - name: 删除文件100-strip_charsets.patch(确保中文支持)
+      base: /package/libs/libiconv-full/patches
+      orig: [
+        100-strip_charsets.patch
+      ]
+      mode: del,#debug
+- patch:
+    path: /.config
+    items:
+    - name: libiconv-full支持
+      cfgs: [
+        CONFIG_PACKAGE_libiconv-full=y,
+        CONFIG_PACKAGE_libcharset=y,
+        CONFIG_PACKAGE_iconv=y,
+      ]
+      mode: config

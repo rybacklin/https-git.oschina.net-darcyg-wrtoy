@@ -1,0 +1,16 @@
+--- # 修复openwrt编译iconv错误问题
+patchs:
+- patch:
+    used: no
+    path: /feeds.conf
+    items:
+    - name: 加入luci2
+      fix: src-git luci2 http://git.oschina.net/darcyg/openwrt-luci2.git
+      mode: add
+
+- patch:
+    path: /feeds.conf
+    items:
+    - name: 加入luci2
+      fix: src-git luci2 git://git.openwrt.org/project/luci2/ui.git
+      mode: add

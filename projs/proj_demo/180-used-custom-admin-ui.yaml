@@ -1,0 +1,47 @@
+--- # 修复openwrt编译iconv错误问题
+patchs:
+- patch:
+    path: /feeds
+    items:
+    - name: 复制项目文件到/custom-feeds/open-public-admin-ui
+      base: /custom-feeds/
+      orig: [
+        {
+          src: open-public-admin-ui,
+          dst: common-system-fix/open-public-admin-ui
+        }
+      ]
+      mode: copy,#debug
+- patch:
+    path: /.config
+    items:
+    - name: 配置open-public-admin-ui
+      cfgs: [
+        CONFIG_PACKAGE_rpcd=y,
+        {
+          i: CONFIG_PACKAGE_rpcd,
+          c: [
+            CONFIG_PACKAGE_rpcd-mod-file=y,
+            CONFIG_PACKAGE_rpcd-mod-iwinfo=y,
+          ]
+        },
+        CONFIG_PACKAGE_libiwinfo=y,
+        CONFIG_PACKAGE_open-public-admin-ui=y,
+      ]
+      mode: config
+- patch:
+    path: /.config
+    items:
+    - name: 启用uhttpd
+      cfgs: [
+        CONFIG_PACKAGE_uhttpd=y,
+        {
+          i: CONFIG_PACKAGE_uhttpd_debug,
+          c: [
+            CONFIG_PACKAGE_uhttpd-mod-lua=y,
+            CONFIG_PACKAGE_uhttpd-mod-tls=n,
+            CONFIG_PACKAGE_uhttpd-mod-ubus=y,
+          ]
+        }
+      ]
+      mode: config

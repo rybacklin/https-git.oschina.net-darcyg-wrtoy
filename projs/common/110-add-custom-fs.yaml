@@ -1,0 +1,92 @@
+--- # 增加基本文件系统支持
+patch:
+  path: /.config
+  items:
+  - name: 内核HASH,CRC支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-crypto-hash=y,
+      CONFIG_PACKAGE_kmod-lib-crc16=y,
+      CONFIG_PACKAGE_kmod-lib-crc7=y,
+    ]
+    mode: config
+  - name: 内核文件系统字符集支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-nls-cp437=y,
+      CONFIG_PACKAGE_kmod-nls-iso8859-1=y,
+      CONFIG_PACKAGE_kmod-nls-utf8=y,
+    ]
+    mode: config
+  - name: 工具库zlib,dnsresolver支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-lib-zlib=y,
+      CONFIG_PACKAGE_kmod-dnsresolver=y,
+    ]
+    mode: config
+  - name: 文件系统支持(基本:fuse,ext4,nfs,vfat,msdos,ntfs)
+    cfgs: [
+      CONFIG_PACKAGE_kmod-fs-autofs4=y,
+      CONFIG_PACKAGE_kmod-fs-configfs=y,
+      CONFIG_PACKAGE_kmod-fs-ext4=y,
+      CONFIG_PACKAGE_kmod-fs-msdos=y,
+      CONFIG_PACKAGE_kmod-fs-nfs=y,
+      CONFIG_PACKAGE_kmod-fs-nfs-common=y,
+      CONFIG_PACKAGE_kmod-fs-ntfs=y,
+      CONFIG_PACKAGE_kmod-fs-vfat=y,
+      CONFIG_PACKAGE_kmod-fuse=y,
+    ]
+    mode: config
+  - name: 文件系统支持(高级:hfs,hfs+,udf,isofs)
+    cfgs: [
+      CONFIG_PACKAGE_kmod-fs-hfs=y,
+      CONFIG_PACKAGE_kmod-fs-hfsplus=y,
+      CONFIG_PACKAGE_kmod-fs-isofs=y,
+      CONFIG_PACKAGE_kmod-fs-udf=y,
+    ]
+    mode: config
+  - name: MMC/SD卡支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-mmc=y,
+      #CONFIG_PACKAGE_kmod-mmc-over-gpio=y,
+      CONFIG_PACKAGE_kmod-mmc-spi=y,
+      #CONFIG_PACKAGE_kmod-spi-bitbang=n,
+      #CONFIG_PACKAGE_kmod-spi-gpio-old=n,
+    ]
+    mode: config
+  - name: 文件系统一般工具
+    cfgs: [
+      CONFIG_PACKAGE_libext2fs=y,
+      CONFIG_PACKAGE_libuuid=y,
+      CONFIG_PACKAGE_e2fsprogs=y,
+      CONFIG_PACKAGE_block-mount=y,
+      CONFIG_PACKAGE_mkdosfs=y,
+    ]
+    mode: config
+  - name: fuse文件系统支持工具
+    cfgs: [
+      CONFIG_PACKAGE_libfuse=y,
+      CONFIG_PACKAGE_fuse-utils=y,
+    ]
+    mode: config
+  - name: nfs-utils工具
+    cfgs: [
+      CONFIG_PACKAGE_libblkid=y,
+      CONFIG_PACKAGE_libevent=y,
+      CONFIG_PACKAGE_librpc=y,
+      CONFIG_PACKAGE_libwrap=y,
+      CONFIG_PACKAGE_nfs-utils=y,
+    ]
+    mode: config
+  - name: blkid,cfdisk,fdisk,lsblk等工具
+    cfgs: [
+      CONFIG_PACKAGE_libblkid=y,
+      CONFIG_PACKAGE_blkid=y,
+      CONFIG_PACKAGE_cfdisk=y,
+      CONFIG_PACKAGE_fdisk=y,
+      CONFIG_PACKAGE_findfs=y,
+      CONFIG_PACKAGE_libmount=y,
+      CONFIG_PACKAGE_lsblk=y,
+      CONFIG_PACKAGE_sfdisk=y,
+      CONFIG_PACKAGE_partx-utils=y,
+    ]
+    mode: config
+

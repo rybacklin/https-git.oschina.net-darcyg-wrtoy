@@ -1,0 +1,16 @@
+--- # 增加U盘/USB硬盘/光驱支持
+patch:
+  path: /.config
+  items:
+  - name: U盘/USB硬盘支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-scsi-core=y,
+      CONFIG_PACKAGE_kmod-usb-storage=y,
+      CONFIG_PACKAGE_kmod-usb-storage-extras=y,
+    ]
+    mode: config
+  - name: USB光驱支持
+    cfgs: [
+      CONFIG_PACKAGE_kmod-scsi-cdrom=y,
+    ]
+    mode: config

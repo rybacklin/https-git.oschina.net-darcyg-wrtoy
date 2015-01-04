@@ -1,0 +1,42 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+uci delete    uhttpd.main.listen_http
+uci add_list  uhttpd.main.listen_http=0.0.0.0:48484
+uci add_list  uhttpd.main.listen_http=[::]:48484
+uci delete    uhttpd.main.listen_https
+uci add_list  uhttpd.main.listen_https=0.0.0.0:48483
+uci add_list  uhttpd.main.listen_https=[::]:48483
+uci set       uhttpd.main.home=/www
+
+[ ! -d /mnt/www ] && mkdir -p /mnt/www
+
+uci set       uhttpd.adminui=uhttpd
+uci set       uhttpd.adminui.home=/mnt/www
+uci set       uhttpd.adminui.rfc1918_filter=1
+uci set       uhttpd.adminui.max_requests=3
+uci set       uhttpd.adminui.max_connections=100
+uci set       uhttpd.adminui.cert=/etc/uhttpd.crt
+uci set       uhttpd.adminui.key=/etc/uhttpd.key
+uci set       uhttpd.adminui.cgi_prefix=/cgi-bin
+uci set       uhttpd.adminui.script_timeout=60
+uci set       uhttpd.adminui.network_timeout=30
+uci set       uhttpd.adminui.http_keepalive=20
+uci set       uhttpd.adminui.tcp_keepalive=1
+uci set       uhttpd.adminui.ubus_prefix=/ubus
+uci add_list  uhttpd.adminui.listen_http=0.0.0.0:8088
+uci add_list  uhttpd.adminui.listen_http=[::]:8088
+uci add_list  uhttpd.adminui.listen_https=0.0.0.0:8443
+uci add_list  uhttpd.adminui.listen_https=[::]:8443
+
+uci commit    uhttpd
+
+/etc/init.d/uhttpd enable
+/etc/init.d/uhttpd restart
+
+echo "================>uhttpd" >> /initlog
+
+exit 0

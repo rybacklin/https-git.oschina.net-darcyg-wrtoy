@@ -1,0 +1,14 @@
+# 忽略文件 测试
+*~
+*.pyc
+.idea/*
+extra/*
+.boardname
+.platform
+.chipname
+.tftplink
+.boardid
+.tftp
+.usbdev
+.jconfig
+.jcfg

@@ -1,0 +1,63 @@
+--- a/ext/gd/config.m4	2014-10-05 23:48:25.002906000 +0800
++++ b/ext/gd/config.m4	2014-10-06 00:04:01.826879613 +0800
+@@ -30,6 +30,11 @@ if test -z "$PHP_ZLIB_DIR"; then
+   [  --with-zlib-dir[=DIR]     GD: Set the path to libz install prefix], no, no)
+ fi
+ 
++if test -z "$PHP_GD_ICONV_DIR"; then
++  PHP_ARG_WITH(gd-iconv-dir, for the location of libiconv,
++  [  --with-gd-iconv-dir[=DIR]      GD: Set the path to libiconv install prefix], no, no)
++fi
++
+ PHP_ARG_WITH(xpm-dir, for the location of libXpm,
+ [  --with-xpm-dir[=DIR]      GD: Set the path to libXpm install prefix], no, no)
+ 
+@@ -155,6 +160,32 @@ AC_DEFUN([PHP_GD_PNG],[
+   fi
+ ])
+ 
++AC_DEFUN([PHP_GD_ICONV],[
++  if test "$PHP_GD_ICONV_DIR" != "no"; then
++
++    for i in $PHP_GD_ICONV_DIR /usr/local /usr; do
++      test -f $i/include/iconv.h && GD_ICONV_DIR=$i && break
++    done
++
++    if test -z "$GD_ICONV_DIR"; then
++      AC_MSG_ERROR([iconv.h not found.])
++    fi
++
++    PHP_CHECK_LIBRARY(iconv,iconv_open,
++    [
++      PHP_ADD_INCLUDE($GD_PNG_DIR/include)
++      PHP_ADD_LIBRARY_WITH_PATH(iconv, $GD_ICONV_DIR/$PHP_LIBDIR, GD_SHARED_LIBADD)
++    ],[
++      AC_MSG_ERROR([Problem with libiconv.(a|so). Please check config.log for more information.])
++    ],[
++      -L$PHP_GD_ICONV_DIR/$PHP_LIBDIR
++    ])
++
++  else
++    AC_MSG_RESULT([If configure fails try --with-png-dir=<DIR>])
++  fi
++])
++
+ AC_DEFUN([PHP_GD_XPM],[
+   if test "$PHP_XPM_DIR" != "no"; then
+ 
+@@ -309,6 +340,7 @@ dnl Various checks for GD features
+   PHP_GD_JPEG
+   PHP_GD_VPX
+   PHP_GD_PNG
++  PHP_GD_ICONV
+   PHP_GD_XPM
+   PHP_GD_FREETYPE2
+   PHP_GD_T1LIB
+@@ -382,6 +414,7 @@ dnl Various checks for GD features
+   PHP_GD_VPX
+   PHP_GD_JPEG
+   PHP_GD_PNG
++  PHP_GD_ICONV
+   PHP_GD_XPM
+   PHP_GD_FREETYPE2
+   PHP_GD_T1LIB

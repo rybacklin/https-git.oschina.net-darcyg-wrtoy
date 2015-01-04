@@ -1,0 +1,50 @@
+#!/bin/sh
+
+fscfg=/etc/config/fstab
+
+[ ! -f /etc/config/fstab ] && ( block detect > /etc/config/fstab )
+#[ -f $fscfg ] && rm $fscfg
+touch $fscfg
+
+[ ! -d /mnt/www ] && mkdir -p /mnt/www
+[ ! -d /mnt/disk ] && mkdir -p /mnt/disk
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+uci set fstab.@global[0]=global
+uci set fstab.@global[0].anon_swap=0
+uci set fstab.@global[0].anon_mount=1
+uci set fstab.@global[0].auto_swap=1
+uci set fstab.@global[0].auto_mount=0
+uci set fstab.@global[0].delay_root=5
+uci set fstab.@global[0].check_fs=0
+#uci set fstab.@swap[0]=swap
+#uci set fstab.@swap[0].enabled=1
+#uci set fstab.@swap[0].device=/dev/sda1
+
+uci add fstab mount
+uci set fstab.@mount[-1]=mount
+uci set fstab.@mount[-1].device=/dev/sda1
+uci set fstab.@mount[-1].target=/mnt/www
+#uci set fstab.@mount[-1].fstype=vfat
+uci set fstab.@mount[-1].enabled=1
+uci set fstab.@mount[-1].uuid=
+
+if [ -e /dev/sda2 ]; then
+    uci add fstab mount
+    uci set fstab.@mount[-1]=mount
+    uci set fstab.@mount[-1].device=/dev/sda2
+    uci set fstab.@mount[-1].target=/mnt/disk
+    #uci set fstab.@mount[-1].fstype=vfat
+    uci set fstab.@mount[-1].enabled=1
+    uci set fstab.@mount[-1].uuid=
+fi
+
+uci commit fstab
+
+/etc/init.d/fstab enable
+/etc/init.d/fstab restart
+
+echo "================>fstab" >> /initlog

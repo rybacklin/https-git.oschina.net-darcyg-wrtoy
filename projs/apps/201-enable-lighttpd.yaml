@@ -1,0 +1,82 @@
+--- # 应用lighttpd网页服务
+patchs:
+- patch:
+    used: no
+    platform: [ x86, rpi, ramips ]
+    projs: [  ]
+    path: /.config
+    items:
+    - name: 启用openssl库
+      cfgs: [
+        CONFIG_PACKAGE_libopenssl=y,
+        {
+          i: CONFIG_PACKAGE_libopenssl,
+          c: [
+            CONFIG_OPENSSL_WITH_EC=y,
+            CONFIG_OPENSSL_WITH_EC2M=n,
+            CONFIG_OPENSSL_ENGINE_CRYPTO=n,
+            CONFIG_PACKAGE_libopencdk=n,
+          ]
+        }
+      ]
+      mode: config
+    - name: 启用lighttpd支持库
+      cfgs: [
+        CONFIG_PACKAGE_libpcre=y,
+        CONFIG_PACKAGE_zlib=y,
+        {
+          i: CONFIG_PACKAGE_libsamplerate,
+          c: [
+            CONFIG_PACKAGE_libsasl2=n,
+          ]
+        },
+        {
+          i: CONFIG_PACKAGE_natpmpc,
+          c: [
+            CONFIG_PACKAGE_nufw=n,
+            CONFIG_PACKAGE_nufw-modules=n,
+            CONFIG_PACKAGE_nufw-python=n,
+            CONFIG_PACKAGE_nutcpc=n,
+          ]
+        }
+      ]
+      mode: config
+    - name: 启用lighttpd
+      cfgs: [
+        CONFIG_PACKAGE_lighttpd=y,
+        {
+          i: CONFIG_PACKAGE_lighttpd,
+          c: [
+            CONFIG_LIGHTTPD_SSL=y,
+            CONFIG_PACKAGE_lighttpd-mod-access=y,
+            CONFIG_PACKAGE_lighttpd-mod-accesslog=n,
+            CONFIG_PACKAGE_lighttpd-mod-alias=y,
+            CONFIG_PACKAGE_lighttpd-mod-auth=y,
+            CONFIG_PACKAGE_lighttpd-mod-cgi=y,
+            CONFIG_PACKAGE_lighttpd-mod-cml=n,
+            CONFIG_PACKAGE_lighttpd-mod-compress=y,
+            CONFIG_PACKAGE_lighttpd-mod-evasive=n,
+            CONFIG_PACKAGE_lighttpd-mod-evhost=n,
+            CONFIG_PACKAGE_lighttpd-mod-expire=n,
+            CONFIG_PACKAGE_lighttpd-mod-extforward=n,
+            CONFIG_PACKAGE_lighttpd-mod-fastcgi=y,
+            CONFIG_PACKAGE_lighttpd-mod-flv-streaming=n,
+            CONFIG_PACKAGE_lighttpd-mod-magnet=n,
+            CONFIG_PACKAGE_lighttpd-mod-proxy=n,
+            CONFIG_PACKAGE_lighttpd-mod-redirect=y,
+            CONFIG_PACKAGE_lighttpd-mod-rewrite=y,
+            CONFIG_PACKAGE_lighttpd-mod-rrdtool=n,
+            CONFIG_PACKAGE_lighttpd-mod-scgi=n,
+            CONFIG_PACKAGE_lighttpd-mod-secdownload=n,
+            CONFIG_PACKAGE_lighttpd-mod-setenv=n,
+            CONFIG_PACKAGE_lighttpd-mod-simple-vhost=n,
+            CONFIG_PACKAGE_lighttpd-mod-ssi=n,
+            CONFIG_PACKAGE_lighttpd-mod-status=n,
+            CONFIG_PACKAGE_lighttpd-mod-trigger-b4-dl=n,
+            CONFIG_PACKAGE_lighttpd-mod-userdir=n,
+            CONFIG_PACKAGE_lighttpd-mod-usertrack=n,
+            CONFIG_PACKAGE_lighttpd-mod-webdav=n,
+          ]
+        }
+      ]
+      mode: config

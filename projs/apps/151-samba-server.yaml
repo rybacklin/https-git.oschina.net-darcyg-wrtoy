@@ -1,0 +1,15 @@
+--- # 增加Samba支持
+patch:
+  used: no
+  platform: [ x86, rpi ]
+  projs: [ dsn ]
+  path: /.config
+  items:
+  - name: 增加Samba支持
+    cfgs: [
+      CONFIG_PACKAGE_samba36-client=y,
+      CONFIG_PACKAGE_samba36-server=y,
+      CONFIG_PACKAGE_SAMBA_MAX_DEBUG_LEVEL=-1,
+      CONFIG_PACKAGE_luci-app-samba=y,
+    ]
+    mode: config

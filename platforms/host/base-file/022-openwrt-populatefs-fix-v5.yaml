@@ -1,0 +1,51 @@
+--- # 修复openwrt host编译生成ext4镜像问题
+patchs:
+- patch:
+    path: /include/image.mk
+    items:
+    - name: host编译生成ext4镜像问题
+      orig: !!str
+        "define Image/mkfs/ext4\n\
+        # generate an ext2 fs\n\
+        \t$(STAGING_DIR_HOST)/bin/genext2fs -U -B $(CONFIG_TARGET_EXT4_BLOCKSIZE) -b $(E2SIZE) -N $(CONFIG_TARGET_EXT4_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext4 -m $(CONFIG_TARGET_EXT4_RESERVED_PCT) $(MKFS_DEVTABLE_OPT)\n\
+        # convert it to ext4\n\
+        \t$(STAGING_DIR_HOST)/bin/tune2fs $(if $(CONFIG_TARGET_EXT4_JOURNAL),-j) -O extents,uninit_bg,dir_index $(KDIR)/root.ext4\n\
+        # fix it up\n\
+        \t$(STAGING_DIR_HOST)/bin/e2fsck -fy $(KDIR)/root.ext4\n\
+        endef\n"
+      fix: !!str
+        "define Image/mkfs/ext4\n\
+        # generate a fs\n\
+        \tdd if=/dev/zero of=$(KDIR)/root.ext4 seek=$(E2SIZE) count=0 bs=$(CONFIG_TARGET_EXT4_BLOCKSIZE)\n\
+        # convert it to ext4\n\
+        \t$(STAGING_DIR_HOST)/bin/mkfs.ext4 -F -E root_owner=0:0 -L OpenWrt -N $(CONFIG_TARGET_EXT4_MAXINODE) \\\n\
+        \t-O has_journal,ext_attr,resize_inode,dir_index,filetype,extent,flex_bg,sparse_super,large_file,uninit_bg,dir_nlink,extra_isize \\\n\
+        \t-m $(CONFIG_TARGET_EXT4_RESERVED_PCT) \\\n\
+        \t$(KDIR)/root.ext4\n\
+        # populate it\n\
+        \t$(STAGING_DIR_HOST)/bin/populatefs -U -d $(TARGET_DIR) $(MKFS_DEVTABLE_OPT) $(KDIR)/root.ext4\n\
+        # check it\n\
+        \t$(STAGING_DIR_HOST)/bin/fsck.ext4 -fy $(KDIR)/root.ext4\n\
+        endef\n"
+
+- patch:
+    path: /tools/Makefile
+    items:
+    - name: host编译生成ext4镜像问题
+      orig: !!str
+        "tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage\n"
+      fix: !!str
+        "tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage populatefs\n"
+
+- patch:
+    path: /
+    items:
+    - name: 复制项目文件到/tools/populatefs
+      base: /
+      orig: [
+        {
+          src: tools/populatefs/Makefile,
+          dst: tools/populatefs/Makefile
+        }
+      ]
+      mode: copy,#debug

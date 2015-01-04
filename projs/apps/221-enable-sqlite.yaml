@@ -1,0 +1,22 @@
+--- # 应用sqlite
+patchs:
+- patch:
+    #used: no
+    path: /.config
+    items:
+    - name: 启用Sqlite3
+      cfgs: [
+        CONFIG_PACKAGE_libsqlite3=y,
+        CONFIG_PACKAGE_sqlite3-cli=y,
+      ]
+      mode: config
+- patch:
+    used: no
+    path: /.config
+    items:
+    - name: 启用Sqlite2
+      cfgs: [
+        CONFIG_PACKAGE_libsqlite2=y,
+        CONFIG_PACKAGE_sqlite2-cli=y,
+      ]
+      mode: config

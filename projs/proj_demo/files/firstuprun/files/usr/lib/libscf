@@ -1,0 +1,222 @@
+#!/bin/sh
+
+VCLI=vvli
+
+scf_get_data(){
+  [ /usr/bin/$VCLI ] || return 0
+  [ -z $1 ] && return 0
+  $VCLI GET $1
+}
+
+scf_set_data(){
+  [ /usr/bin/$VCLI ] || return 0
+  [ -z $1 -o -z $2 ] && return 0
+  $VCLI SET $1 $2
+}
+
+scf_get_passwd(){
+  local _usr
+  [ ! -z $1 ] && _usr=$1 || _usr="admin"
+  echo $(scf_get_data "system:passwd:$_usr") | base64 -d
+}
+
+scf_set_passwd(){
+  local _pwd
+  local _usr
+  [ ! -z $1 ] && {
+    [ -z $2 ] && _pwd=$1 _usr="admin" || _pwd=$2 _usr=$1
+  } || return 0
+  `scf_set_data "system:passwd:$_usr" $(echo $_pwd | base64)`
+}
+
+scf_get_val(){
+  local _key
+  [ ! -z $1 ] && _key=$1 || _key="default"
+  echo $(scf_get_data "system:data:$_usr") | base64 -d
+}
+
+scf_set_val(){
+  local _val
+  local _key
+  [ ! -z $1 ] && {
+    [ -z $2 ] && _val=$1 _key="default" || _val=$2 _key=$1
+  } || return 0
+  `scf_set_data "system:data:$_key" $(echo $_val | base64)`
+}
+
+scf_delay_reboot(){
+  local fcfg="/tmp/reboot"
+  local delay=5
+  [ -z $1 ] || delay=$1
+  echo -e "#!/bin/sh\nsleep $delay\nreboot" > $fcfg
+  chmod a+x $fcfg
+  $fcfg &
+}
+
+scf_delay_poweroff(){
+  local fcfg="/tmp/poweroff"
+  local delay=5
+  [ -z $1 ] || delay=$1
+  echo -e "#!/bin/sh\nsleep $delay\npoweroff" > $fcfg
+  chmod a+x $fcfg
+  $fcfg &
+}
+
+scf_delay_shutdown(){
+  scf_delay_poweroff $1
+}
+
+scf_get_mac(){
+  echo $(ifconfig -a eth0 | grep eth0 | awk '{print $5}')
+}
+
+scf_get_mac_l6(){
+  echo $(ifconfig -a eth0 | grep eth0 | awk '{print $5}' | awk -F: '{print $4""$5""$6}')
+}
+
+scf_shutdown(){ poweroff }
+
+shutdown(){ scf_shutdown }
+
+scf_uhttpd_cfg_custom(){
+  local _name=adminui
+  local _ubus=ubus
+  local _home=/usr/data/admin
+  local _ip=0.0.0.0
+  local _ip6=[::]
+  local _port=8088
+  local _port6=8443
+  [ $# -eq 1 ] && _home=$1
+  [ $# -eq 2 ] && _home=$1 _port=$2
+  [ $# -eq 3 ] && _home=$1 _ip=$2 _port=$3
+  [ $# -eq 4 ] && _name=$1 _home=$2 _port=$3 _port6=$4
+  [ $# -eq 5 ] && _home=$1 _ip=$2 _port=$3 _ip6=$4 _port6=$5
+  [ $# -eq 6 ] && _name=$1 _home=$2 _ip=$3 _port=$4 _ip6=$5 _port6=$6
+  [ $# -eq 7 ] && _name=$1 _home=$2 _ip=$3 _port=$4 _ip6=$5 _port6=$6 _ubus=$7
+  uci set       uhttpd.$_name=uhttpd
+  uci set       uhttpd.$_name.home=/usr/data/admin
+  uci set       uhttpd.$_name.rfc1918_filter=1
+  uci set       uhttpd.$_name.max_requests=3
+  uci set       uhttpd.$_name.max_connections=100
+  uci set       uhttpd.$_name.cert=/etc/uhttpd.crt
+  uci set       uhttpd.$_name.key=/etc/uhttpd.key
+  uci set       uhttpd.$_name.cgi_prefix=/cgi-bin
+  uci set       uhttpd.$_name.script_timeout=60
+  uci set       uhttpd.$_name.network_timeout=30
+  uci set       uhttpd.$_name.http_keepalive=20
+  uci set       uhttpd.$_name.tcp_keepalive=1
+  uci set       uhttpd.$_name.ubus_prefix=$_ubus
+  uci delete    uhttpd.$_name.listen_http
+  uci add_list  uhttpd.$_name.listen_http=$_ip:$_port
+  uci add_list  uhttpd.$_name.listen_http=$_ip6:$_port
+  uci delete    uhttpd.$_name.listen_https
+  uci add_list  uhttpd.$_name.listen_https=$_ip:$_port6
+  uci add_list  uhttpd.$_name.listen_https=$_ip6:$_port6
+}
+
+scf_uhttpd_cfg_adm(){
+  scf_uhttpd_cfg_custom adminui /usr/data/admin 8088 8443
+  [ -z $1 ] || uci commit    uhttpd
+}
+
+scf_uhttpd_cfg_def(){
+  scf_uhttpd_cfg_custom main /www 48484 48483
+  [ -z $1 ] || uci commit    uhttpd
+}
+
+scf_wireless_cfg_ap_custom(){
+  local _name=""
+  local _enabled=0
+  local _channel=auto
+  local _hwmode=11g
+  local _htmode=HT40+
+  local _passwd=""
+  local _encrypt=none
+  local _mode=ap
+  local _hidden=0
+  local _network=lan
+  #[ $# -eq 0 ] && _name="seatry.com"
+  [ $# -eq 1 ] && _name=$1
+  [ $# -eq 2 ] && _name=$1 _passwd=$2
+  [ $# -eq 3 ] && _name=$1 _passwd=$2 _channel=$3
+  [ $# -eq 4 ] && _name=$1 _passwd=$2 _channel=$3 _htmode=$4
+  [ $# -eq 5 ] && _name=$1 _passwd=$2 _channel=$3 _htmode=$4 _hidden=$5
+
+  [ -z $_name ] && _name=$(scf_get_val hostname)
+  [ -z $_name ] && _name="seatry.com"
+
+  MACLAST6D=$(scf_get_mac_l6)
+  uci set wireless.@wifi-device[0].disabled=$_enabled
+  uci set wireless.@wifi-device[0].channel=$_channel
+  uci set wireless.@wifi-device[0].hwmode=$_hwmode
+  uci set wireless.@wifi-device[0].htmode=$_htmode
+
+  uci set wireless.@wifi-iface[0].disabled=$_enabled
+  [ ${_name: -1} == "-" -o ${_name: -1} == "_" ] && _name=$_name$MACLAST6D
+  uci set wireless.@wifi-iface[0].ssid=$_name
+  #[ -z $_passwd ] && _encrypt=none || _encrypt="mixed-psk+tkip+aes"
+  [ -z $_passwd ] && _encrypt="none" || _encrypt="psk2+tkip+aes"
+  uci set wireless.@wifi-iface[0].encryption=$_encrypt
+  uci set wireless.@wifi-iface[0].key=$_passwd
+  uci set wireless.@wifi-iface[0].mode=$_mode
+  uci set wireless.@wifi-iface[0].hidden=$_hidden
+  uci set wireless.@wifi-iface[0].network=$_network
+}
+
+scf_wireless_cfg_ap(){
+  scf_wireless_cfg_ap_custom $1 $2 $3
+  [ -z $4 ] || uci commit    wireless
+}
+
+scf_add_user(){
+  local _uname=""
+  local _upwd=""
+  [ $# -eq 4 -o $# -eq 6 ] || return 0
+  _uname=$1
+  [ -z $_uname ] && return 0
+  echo "$_uname:*:1000:65534:$_uname:/var:/bin/false" >> /etc/passwd
+  echo "$_uname:*:0:0:99999:7:::" >> /etc/shadow
+  [ -z $2 ] || _upwd=$2
+  [ -z $3 ] || _upwd=$(echo "$3" | base64 -d)
+  echo -e "$_upwd\n$_upwd" | passwd $_uname
+  if [ $4 == "1" -o $4 == "true" ]; then
+    uci set rpcd.@login[0].username=$_uname
+    uci set rpcd.@login[0].password=\$p\$$_uname
+    uci commit rpcd
+  fi
+  if [ ! -z $5 -o ! -z $6 ]; then
+    [ -z $5 ] || _upwd=$5
+    [ -z $6 ] || _upwd=$(echo "$6" | base64 -d)
+    echo -e "$_upwd\n$_upwd" | smbpasswd -a $_uname -s
+  fi
+}
+
+scf_set_hostname(){
+  local _name="seatry.com"
+  [ -z $1 ] && _name=$1
+  MACLAST6D=$(scf_get_mac_l6)
+  [ ${_name: -1} == "-" -o ${_name: -1} == "_" ] && _name=$_name$MACLAST6D
+  scf_set_val hostname $_name
+  uci set system.@system[0].hostname=$_name
+  uci set system.@system[0].timezone=CST-8
+
+  uci commit system
+}
+
+scf_samba_cfg_main(){
+  uci set samba.@samba[0].name=DSL-Media-Station-$MACLAST6D
+  uci set samba.@samba[0].workgroup=WORKGROUP
+  uci set samba.@samba[0].description="DSL Media Station ($MACLAST6D)"
+  uci set samba.@samba[0].homes=0
+}
+
+scf_samba_cfg_share(){
+  if [ -d /usr/data/webroot ]; then
+    uci add samba sambashare
+    uci set samba.@sambashare[-1].name=webroot
+    uci set samba.@sambashare[-1].path=/usr/data/webroot
+    uci set samba.@sambashare[-1].read_only=no
+    uci set samba.@sambashare[-1].guest_ok=no
+    #uci set samba.@sambashare[-1].users=root,nobody
+  fi
+}

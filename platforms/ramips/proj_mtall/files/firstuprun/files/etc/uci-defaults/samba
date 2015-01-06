@@ -1,0 +1,35 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/ramips.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+[ ! -f /etc/config/samba ] && exit 0
+
+uci set samba.@samba[0].name=SC-Media-Station
+uci set samba.@samba[0].workgroup=WORKGROUP
+uci set samba.@samba[0].description="SC Media Station"
+uci set samba.@samba[0].homes=1
+
+uci add samba sambashare
+
+if [ -d /mnt/www ]; then
+  uci set samba.@sambashare[0].name=webroot
+  uci set samba.@sambashare[0].path=/mnt/www
+  uci set samba.@sambashare[0].read_only=no
+  uci set samba.@sambashare[0].guest_ok=yes
+fi
+
+if [ -d /mnt/data ]; then
+  uci set samba.@sambashare[1].name=data
+  uci set samba.@sambashare[1].path=/mnt/data
+  uci set samba.@sambashare[1].read_only=no
+  uci set samba.@sambashare[1].guest_ok=yes
+fi
+
+uci commit samba
+
+/etc/init.d/samba enable
+/etc/init.d/samba restart
+

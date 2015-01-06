@@ -1,0 +1,16 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/ramips.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+[ ! -L /bin/login -o ! -L /usr/sbin/chpasswd -o ! -L /usr/bin/cryptpw ] && exit 0
+
+initcfg=/etc/inittab
+
+if [ -f $initcfg ]; then
+  sed -i "s@^::askconsole:/bin/ash --login@#::askconsole:/bin/ash --login@" $initcfg
+  echo "/dev/ttyS0::askfirst:/bin/login" >> $initcfg
+  echo "root:"`cryptpw Seecha.Ltd.` | chpasswd -e
+fi

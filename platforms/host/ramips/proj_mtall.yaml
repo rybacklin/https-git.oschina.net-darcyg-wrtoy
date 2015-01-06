@@ -29,6 +29,20 @@ patchs:
       ]
       mode: config
 - patch:
+    path: /.config
+    items:
+    - name: 开启无线hostapd支持,内核支持lib80211
+      cfgs: [
+        CONFIG_PACKAGE_kmod-hostap=y,
+        CONFIG_PACKAGE_kmod-lib80211=y,
+        CONFIG_PACKAGE_hostapd=y,
+        CONFIG_PACKAGE_hostap-utils=y,
+        CONFIG_PACKAGE_hostapd-utils=y,
+        CONFIG_PACKAGE_hostapd-common=y,
+        CONFIG_PACKAGE_hostapd-common-old=y,
+      ]
+      mode: config
+- patch:
     path: /target/linux/ramips/base-files/lib/ramips.sh
     items:
     - name: 增加自定义设备MTALL(1) 增加定制设备名称-注意匹配
@@ -88,11 +102,12 @@ patchs:
         "\tcase $board in\n"
       fix: !!str
         "\tmtall)\n\
-        \t\t#ucidef_set_interfaces_lan_wan \"eth0\" \"eth1\"\n\
-        \t\t#ucidef_set_interface_wan \"eth0.1\" \n\
-        \t\tucidef_set_interface_lan \"eth0.1\" \n\
+        \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
+        \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
+        \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
         \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
-        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"4 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"0 1 2 3 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
         \t\t;;\n\n"
       mode: add,#debug
 - patch:
@@ -103,10 +118,11 @@ patchs:
         "\tcase $board in\n"
       fix: !!str
         "\tmtall)\n\
-        \t\t#ucidef_set_interfaces_lan_wan \"eth0\" \"eth1\"\n\
-        \t\t#ucidef_set_interface_wan\"eth0.1\" \n\
-        \t\tucidef_set_interface_lan\"eth0.1\" \n\
+        \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
+        \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
+        \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
         \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
-        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"4 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"0 1 2 3 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
         \t\t;;\n\n"
       mode: add,#debug

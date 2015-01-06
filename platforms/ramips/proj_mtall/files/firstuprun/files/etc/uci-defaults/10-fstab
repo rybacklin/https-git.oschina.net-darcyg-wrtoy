@@ -1,0 +1,54 @@
+#!/bin/sh
+
+fscfg=/etc/config/fstab
+
+[ ! -f /etc/config/fstab ] && ( block detect > /etc/config/fstab )
+#[ -f $fscfg ] && rm $fscfg
+touch $fscfg
+
+. /lib/functions.sh
+. /lib/ramips.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+uci set fstab.@global[0]=global
+uci set fstab.@global[0].anon_swap=0
+uci set fstab.@global[0].anon_mount=1
+uci set fstab.@global[0].auto_swap=1
+uci set fstab.@global[0].auto_mount=1
+uci set fstab.@global[0].delay_root=5
+uci set fstab.@global[0].check_fs=0
+#uci set fstab.@swap[0]=swap
+#uci set fstab.@swap[0].enabled=1
+#uci set fstab.@swap[0].device=/dev/sda1
+idx=0
+if [ -e /dev/mmcblk0p1 ]; then
+    uci set fstab.@mount[$idx]=mount
+    uci set fstab.@mount[$idx].device=/dev/mmcblk0p1
+    uci set fstab.@mount[$idx].target=/mnt/www
+    #uci set fstab.@mount[$idx].fstype=vfat
+    uci set fstab.@mount[$idx].enabled=1
+    uci set fstab.@mount[$idx].uuid=
+    idx=1
+fi
+if [ -e /dev/mmcblk0p2 ]; then
+    uci set fstab.@mount[$idx]=mount
+    uci set fstab.@mount[$idx].device=/dev/mmcblk0p2
+    uci set fstab.@mount[$idx].target=/mnt/data
+    #uci set fstab.@mount[$idx].fstype=vfat
+    uci set fstab.@mount[$idx].enabled=1
+    uci set fstab.@mount[$idx].uuid=
+fi
+if [ -e /dev/mmcblk0 ]; then
+    uci set fstab.@mount[0]=mount
+    uci set fstab.@mount[0].device=/dev/mmcblk0
+    uci set fstab.@mount[0].target=/mnt/www
+    #uci set fstab.@mount[0].fstype=vfat
+    uci set fstab.@mount[0].enabled=1
+    uci set fstab.@mount[0].uuid=
+fi
+
+uci commit fstab
+
+/etc/init.d/fstab enable
+/etc/init.d/fstab restart

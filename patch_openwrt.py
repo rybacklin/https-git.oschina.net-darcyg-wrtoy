@@ -26,6 +26,8 @@ def test(args):
 @argument('-w', '--enable-write', action='store_true', default=False, help='复写源文件')
 @argument('-f', '--enable-write-fix', action='store_true', default=False, help='写fix文件')
 @argument('-d', '--enable-demo', action='store_true', default=False, help='Demo模式')
+@argument('-H', '--enable-host-patch', action='store_true', default=False, help='编译系统补丁')
+@argument('-P', '--enable-platform-patch', action='store_true', default=False, help='目标平台补丁')
 def proj(args):
     """ 项目
 
@@ -36,11 +38,22 @@ def proj(args):
     proj = patchProj(args.sourcecode_dir,args.projectname,args.project_type)
     #print args.projectname
     #print args.project_type
+    proj.enable_write_source(args.enable_write)
+    proj.enable_write_fix(args.enable_write_fix)
+    if args.enable_host_patch:
+        print "应用编译系统的补丁"
+        proj.enable_host_mode(args.enable_host_patch)
+        proj.patch_yaml()
+        return
+    if args.enable_platform_patch:
+        print "目标平台补丁"
+        proj.enable_platform_mode(args.enable_platform_patch)
+        proj.patch_yaml()
+        return
     if isEmpty(args.projectname) or not proj.valid_proj():
         print "不存在的项目"
         return
-    proj.enable_write_source(args.enable_write)
-    proj.enable_write_fix(args.enable_write_fix)
+
     proj.enable_demo_mode(args.enable_demo)
     proj.patch_yaml()
 

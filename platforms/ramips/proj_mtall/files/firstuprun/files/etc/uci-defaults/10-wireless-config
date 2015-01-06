@@ -1,0 +1,26 @@
+#!/bin/sh
+
+wlancfg=/etc/config/wireless
+
+[ ! -f $wlancfg ] && ( wifi detect )
+#[ -f $fscfg ] && rm $fscfg
+touch $wlancfg
+
+. /lib/functions.sh
+. /lib/ramips.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+MACLAST6D=`ifconfig -a eth0 | grep eth0 | awk '{print $5}' | awk -F : '{print $4""$5""$6}'`
+
+uci set wireless.@wifi-device[0].disabled=0
+uci set wireless.@wifi-iface[0].disabled=0
+uci set wireless.@wifi-iface[0].ssid=MTALL-$MACLAST6D
+uci set wireless.@wifi-iface[0].encryption=psk2+tkip+aes
+uci set wireless.@wifi-iface[0].key=12345678
+
+uci commit wireless
+
+/ect/init.d/network restart
+
+echo "================>wireless-config" >> /initlog

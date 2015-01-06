@@ -44,7 +44,7 @@ elif [ "$type" == "rpi" ]; then
 fi
 
 m="i"
-echo $mode
+
 [ -z "$proj" -o "$proj" == "empty" -o "$mode" == "e" ] && m="e"
 
 [ -z "$mode" -o "$mode" == "c" ] && exit 0

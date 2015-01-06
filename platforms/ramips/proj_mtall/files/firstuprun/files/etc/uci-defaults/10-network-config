@@ -1,0 +1,20 @@
+#!/bin/sh
+
+lancfg=/etc/config/network
+
+[ ! -f $lancfg ] && exit 0
+
+. /lib/functions.sh
+. /lib/ramips.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+
+uci set network.lan.ipaddr=192.168.1.1
+uci set network.lan.dynamicdhcp=1
+
+uci commit network
+
+#/ect/init.d/network restart
+
+echo "================>network-config" >> /initlog

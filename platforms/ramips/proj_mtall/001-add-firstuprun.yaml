@@ -1,0 +1,22 @@
+--- # 默认.config调整系统
+patchs:
+- patch:
+    path: /feeds
+    items:
+    - name: 复制项目文件到/custom-feeds/firstuprun
+      base: /custom-feeds/
+      orig: [
+        {
+          src: firstuprun,
+          dst: common-system-fix/mtall-firstuprun
+        }
+      ]
+      mode: copy,#debug
+- patch:
+    path: /.config
+    items:
+    - name: mtall-firstuprun支持
+      cfgs: [
+        CONFIG_PACKAGE_mtall-firstuprun=y,
+      ]
+      mode: config

@@ -1,0 +1,36 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/ramips.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+firecfg=/etc/firewall.user 
+
+[ -f $firecfg ] && rm $firecfg 
+
+lan_mac=$(cat /sys/class/net/eth0/address)
+wan_mac=$(macaddr_add "$lan_mac" 1)
+
+lan_addr=$(uci get network.lan.ipaddr)
+lan_web_port=8080
+
+touch $firecfg
+
+echo "iptables -t nat -I PREROUTING -p tcp -m tcp --dport 0:65535 -j DNAT --to $lan_addr:$lan_web_port" >> $firecfg
+echo "iptables -t nat -I PREROUTING -p udp -m udp --dport 0:65535 -j DNAT --to $lan_addr:$lan_web_port" >> $firecfg
+
+echo "iptables -t nat -I PREROUTING -m mac --mac-source $lan_mac -j ACCEPT" >> $firecfg
+echo "iptables -t nat -I PREROUTING -m mac --mac-source $wan_mac -j ACCEPT" >> $firecfg
+
+# 目标为$lan_addr的机器不进行地址转换
+echo "iptables -t nat -I PREROUTING -p tcp -m tcp -d $lan_addr -j ACCEPT" >> $firecfg
+echo "iptables -t nat -I PREROUTING -p udp -m udp -d $lan_addr -j ACCEPT" >> $firecfg
+
+# 开启DNS/DHCP通过
+echo "iptables -t nat -I PREROUTING -m state --state NEW,ESTABLISHED,RELATED,INVALID -p tcp --dport 53 -j ACCEPT" >> $firecfg
+echo "iptables -t nat -I PREROUTING -m state --state NEW,ESTABLISHED,RELATED,INVALID -p udp --dport 53 -j ACCEPT" >> $firecfg
+echo "iptables -t nat -I PREROUTING -m state --state NEW,ESTABLISHED,RELATED,INVALID -p udp --dport 67 -j ACCEPT" >> $firecfg
+
+
+exit 0

@@ -37,11 +37,17 @@ endef
 define Package/mtall-firstuprun/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(CP) ./files/etc/uci-defaults/samba              $(1)/etc/uci-defaults/samba
-	$(CP) ./files/etc/uci-defaults/firewalluser       $(1)/etc/uci-defaults/firewalluser
+	$(CP) ./files/etc/uci-defaults/00-system          $(1)/etc/uci-defaults/00-system
 	$(CP) ./files/etc/uci-defaults/10-fstab           $(1)/etc/uci-defaults/10-fstab
 	$(CP) ./files/etc/uci-defaults/10-network-config  $(1)/etc/uci-defaults/10-network-config
 	$(CP) ./files/etc/uci-defaults/10-wireless-config $(1)/etc/uci-defaults/10-wireless-config
 	$(CP) ./files/etc/uci-defaults/A01-set-login      $(1)/etc/uci-defaults/A01-set-login
+	$(CP) ./files/etc/uci-defaults/A02-luci-config    $(1)/etc/uci-defaults/A02-luci-config
+	$(CP) ./files/etc/uci-defaults/mjpg-streamer      $(1)/etc/uci-defaults/mjpg-streamer
+	$(CP) ./files/etc/uci-defaults/sftp               $(1)/etc/uci-defaults/sftp
+	$(CP) ./files/etc/uci-defaults/reboot             $(1)/etc/uci-defaults/zreboot
+	$(CP) ./files/etc/banner                          $(1)/etc/banner
+	$(CP) ./files/etc/rc.local                        $(1)/etc/rc.local
 endef
 
 $(eval $(call BuildPackage,mtall-firstuprun))

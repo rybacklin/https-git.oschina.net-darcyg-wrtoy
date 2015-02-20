@@ -17,4 +17,4 @@ uci commit network
 
 #/ect/init.d/network restart
 
-echo "================>network-config" >> /initlog
+echo "================>network-config" >> /var/log/initlog

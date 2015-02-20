@@ -32,6 +32,9 @@ proj_type="ramips"
 is_proxychains=""
 package_name=""
 is_makepackage=""
+do_action=""
+vertag=""
+
 
 for i in $@
 do
@@ -134,6 +137,8 @@ do
         is_cfgdef="3"
     elif [ "$i" == "def2bak" -o "$i" == "d2b" ]; then
         is_cfgdef="4"
+    elif [ "$i" == "tftp" ]; then
+        do_action="reset_tftp"
     elif [ "$i" == "x86" ]; then
         proj_type="x86"
     elif [ "$i" == "ramips" ]; then
@@ -153,33 +158,14 @@ do
     fi
 done
 
-if [ -f ".boardname" ]; then
-  boardname=`cat .boardname`
-fi
-
-if [ -f ".boardid" ]; then
-  boardid=`cat .boardid`
-fi
-
-if [ -f ".platform" ]; then
-  platform=`cat .platform`
-fi
-
-if [ -f ".chipname" ]; then
-  chipname=`cat .chipname`
-fi
-
-if [ -f ".usbdev" ]; then
-  usbdev=`cat .usbdev`
-fi
-
-if [ -f ".tftp" ]; then
-  tftproot=`cat .tftp`
-fi
-
-if [ -f ".tftplink" ]; then
-  targetbin=`cat .tftplink`
-fi
+[ -f ".boardname" ] && boardname=$(cat .boardname)
+[ -f ".boardid" ] && boardid=$(cat .boardid)
+[ -f ".platform" ] && platform=$(cat .platform)
+[ -f ".chipname" ] && chipname=$(cat .chipname)
+[ -f ".usbdev" ] && usbdev=$(cat .usbdev)
+[ -f ".tftp" ] && tftproot=$(cat .tftp)
+[ -f ".tftplink" ] && targetbin=$(cat .tftplink)
+[ -f ".vertag" ] && vertag=$(cat .vertag)
 
 if [ ! -z "$is_set" ]; then
   echo "configure board info."
@@ -222,7 +208,7 @@ if [ ! -z "$is_set" ]; then
   fi
 fi
 
-binfile=openwrt-$platform-$chipname-$boardname-squashfs-sysupgrade.bin
+binfile=openwrt-$vertag$platform-$chipname-$boardname-squashfs-sysupgrade.bin
 rootfs=openwrt-$platform-$chipname-$boardid-rootfs.tar.gz
 
 cd ..
@@ -482,6 +468,10 @@ if [ ! -z "$is_cfgdef" ]; then
     echo " copy $cfgdef to $cfgdst"
     cp $cfgdef $cfgdst
   fi
+fi
+
+if [ ! -z "$do_action" ]; then
+  [ "$do_action" == "reset_tftp" ] && sudo service tftpd-hpa restart
 fi
 
 if [ ! -z "$is_extra" ]; then

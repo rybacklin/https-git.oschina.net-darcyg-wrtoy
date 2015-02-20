@@ -60,22 +60,6 @@ patchs:
       ]
       mode: config
 - patch:
-    path: /target
-    items:
-    - name: 增加spi,mmc-wp补丁(mt7620)
-      base: /target/linux/ramips/
-      orig: [
-        {
-          src: patches-3.14/9001-SPI-ralink-add-chipselect-support-by-Manfeel.patch,
-          dst: patches-3.14/9001-SPI-ralink-add-chipselect-support-by-Manfeel.patch
-        },
-        {
-          src: patches-3.14/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection.patch,
-          dst: patches-3.14/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection.patch
-        },
-      ]
-      mode: copy,#debug
-- patch:
     path: /target/linux/ramips/image/Makefile
     items:
     - name: 增加自定义设备MTALL(3) 增加32MB设备编译函数
@@ -88,7 +72,10 @@ patchs:
       mode: add
 - patch:
     #path: /.config
-    path: /target/linux/ramips/mt7620/config-3.14
+    path: [
+      /target/linux/ramips/mt7620/config-3.14,
+      /target/linux/ramips/mt7620/config-default,
+    ]
     items:
     - name: 内核MMC/SD卡支持(mt7620)
       cfgs: [
@@ -97,3 +84,52 @@ patchs:
         CONFIG_PACKAGE_kmod-mmc-over-gpio=n,
       ]
       mode: config
+- patch:
+    path: /target
+    items:
+    - name: 32MB-Reboot 补丁
+      base: /target/linux/ramips/
+      orig: [
+        {
+          src: patches/9999-reg-shutdown-fix-32MB-reboot.patch,
+          dst: patches-3.14/9999-fix-32MB-reboot-by-Manfeel.patch
+        },
+      ]
+      mode: copy,#debug
+- patch:
+    path: /target
+    items:
+    - name: MMC 写使能 补丁
+      base: /target/linux/ramips/
+      orig: [
+        {
+          src: patches/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection.patch,
+          dst: patches-3.14/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection-by-Manfeel.patch
+        },
+      ]
+      mode: copy,#debug
+- patch:
+    #path: /.config
+    path: /target/linux/ramips/dts/mt7620a.dtsi
+    items:
+    - name: 打开两个spi(mt7620)
+      orig: !!str
+        "\t\tspi_pins: spi {\n\
+        \t\t\tspi {\n\
+        \t\t\t\tralink,group = \"spi\";\n\
+        \t\t\t\tralink,function = \"spi\";\n\
+        \t\t\t};\n\
+        \t\t};\n"
+      fix: !!str
+        "\t\tspi_pins: spi {\n\
+        \t\t\tspi {\n\
+        \t\t\t\tralink,group = \"spi\";\n\
+        \t\t\t\tralink,function = \"spi\";\n\
+        \t\t\t};\n\
+        \t\t\t/* added by manfeel */\n\
+        \t\t\tcs1 {\n\
+        \t\t\t\tralink,group = \"spi refclk\";\n\
+        \t\t\t\tralink,function = \"spi refclk\";\n\
+        \t\t\t};\n\
+        \t\t};\n"
+      mode: std+

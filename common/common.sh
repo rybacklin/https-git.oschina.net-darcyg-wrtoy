@@ -1,5 +1,8 @@
 #!/bin/bash
 
+[ -f $(pwd)/$1/options.bash ] && source $(pwd)/$1/options.bash
+[ -f $(pwd)/$1/expand.bash ] && source $(pwd)/$1/expand.bash
+
 now()
 {
   date +%Y%m%d-%H%M%S
@@ -452,6 +455,8 @@ show_text()
     echo "==>  $info"
   elif [ $mode == "d" ]; then
     echo "$info"
+  elif [ $mode == "l" ]; then
+    echo "==================================================="
   else
     echo "$info"
   fi

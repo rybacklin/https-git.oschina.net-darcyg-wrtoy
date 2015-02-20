@@ -1,5 +1,6 @@
 --- # 默认打开wifi
 patch:
+  used: no
   path: /feeds/luci/modules/base/root/etc/config/luci
   items:
   - name: 配置默认中文语言

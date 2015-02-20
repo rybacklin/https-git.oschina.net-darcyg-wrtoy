@@ -14,3 +14,5 @@ if [ -f $initcfg ]; then
   echo "/dev/ttyS0::askfirst:/bin/login" >> $initcfg
   echo "root:"`cryptpw Seecha.Ltd.` | chpasswd -e
 fi
+
+echo "================>set-login" >> /var/log/initlog

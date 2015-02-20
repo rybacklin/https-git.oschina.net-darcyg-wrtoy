@@ -1,14 +1,17 @@
 --- # 默认.config调整系统
 patchs:
 - patch:
-    #path: /.config
-    path: /target/linux/ramips/mt7620/config-3.14
+    path: /.config
+    #path: [
+    #  /target/linux/ramips/mt7620/config-3.14,
+    #  /target/linux/ramips/mt7620/config-default,
+    #]
     items:
     - name: 内核MMC/SD卡支持(mt7620)
       cfgs: [
         CONFIG_PACKAGE_kmod-sdhci=y,
         CONFIG_PACKAGE_kmod-sdhci-mt7620=y,
-        CONFIG_PACKAGE_kmod-mmc-over-gpio=y,
+        CONFIG_PACKAGE_kmod-mmc-over-gpio=n,
         {
           i: CONFIG_PACKAGE_kmod-mmc-over-gpio,
           c: [
@@ -40,6 +43,7 @@ patchs:
         CONFIG_PACKAGE_hostapd-utils=y,
         CONFIG_PACKAGE_hostapd-common=y,
         CONFIG_PACKAGE_hostapd-common-old=y,
+        CONFIG_PACKAGE_wpa-supplicant=y,
       ]
       mode: config
 - patch:
@@ -53,6 +57,14 @@ patchs:
         \t\tname=\"mtall\"\n\
         \t\t;;\n\n"
       mode: add
+    - name: 增加自定义设备MTALL(1) 增加定制设备名称-注意匹配
+      orig: !!str
+        "\tcase \"$machine\" in\n"
+      fix: !!str
+        "\t*\"MTALL16M\")\n\
+        \t\tname=\"mtall16m\"\n\
+        \t\t;;\n\n"
+      mode: add
 - patch:
     path: /target/linux/ramips/base-files/lib/upgrade/platform.sh
     items:
@@ -61,6 +73,12 @@ patchs:
         "\tcase \"$board\" in\n"
       fix: !!str
         "\tmtall | \\\n"
+      mode: add
+    - name: 增加自定义设备MTALL(2) 增加定制设备
+      orig: !!str
+        "\tcase \"$board\" in\n"
+      fix: !!str
+        "\tmtall16m | \\\n"
       mode: add
 - patch:
     path: /target/linux/ramips/image/Makefile
@@ -71,11 +89,23 @@ patchs:
       fix: !!str
         "\nImage/Build/Profile/MTALL=$(call BuildFirmware/Default32M/$(1),$(1),mtall,MTALL)\n\n"
       mode: add
+    - name: 增加自定义设备MTALL(4) 增加定制设备编译参数
+      orig: !!str
+        "Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp_n53,RP-N53)\n"
+      fix: !!str
+        "\nImage/Build/Profile/MTALL16M=$(call BuildFirmware/Default16M/$(1),$(1),mtall16m,MTALL16M)\n\n"
+      mode: add
     - name: 增加自定义设备MTALL(5) 增加定制设备编译
       orig: !!str
         "\t$(call Image/Build/Profile/RP-N53,$(1))\n"
       fix: !!str
         "\t$(call Image/Build/Profile/MTALL,$(1))\n"
+      mode: add
+    - name: 增加自定义设备MTALL(5) 增加定制设备编译
+      orig: !!str
+        "\t$(call Image/Build/Profile/RP-N53,$(1))\n"
+      fix: !!str
+        "\t$(call Image/Build/Profile/MTALL16M,$(1))\n"
       mode: add
 - patch:
     path: /target
@@ -93,6 +123,19 @@ patchs:
         },
       ]
       mode: copy,#debug
+    - name: 增加自定义设备MTALL(6) 主板IO配置dts,Menuconfig显示
+      base: /target/linux/ramips/
+      orig: [
+        {
+          src: profiles/MTALL16M.dts,
+          dst: dts/MTALL16M.dts
+        },
+        {
+          src: profiles/mtall16m.mk,
+          dst: mt7620/profiles/mtall16m.mk
+        },
+      ]
+      mode: copy,#debug
 - patch:
     used: no
     path: /target/linux/ramips/base-files/etc/uci-defaults/02_network
@@ -102,6 +145,19 @@ patchs:
         "\tcase $board in\n"
       fix: !!str
         "\tmtall)\n\
+        \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
+        \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
+        \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
+        \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"0 1 2 3 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
+        \t\t;;\n\n"
+      mode: add,#debug
+    - name: 增加自定义设备MTALL(8)A 设备uci-default配置（老方法）
+      orig: !!str
+        "\tcase $board in\n"
+      fix: !!str
+        "\tmtall16m)\n\
         \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
         \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
         \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
@@ -126,3 +182,134 @@ patchs:
         \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
         \t\t;;\n\n"
       mode: add,#debug
+    - name: 增加自定义设备MTALL(8)A 设备uci-default配置（老方法）
+      orig: !!str
+        "\tcase $board in\n"
+      fix: !!str
+        "\tmtall16m)\n\
+        \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
+        \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
+        \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
+        \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"0 1 2 3 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
+        \t\t;;\n\n"
+      mode: add,#debug
+- patch:
+    path: /target/linux/ramips/mt7620/target.mk
+    items:
+    - name: 设备RTC功能a
+      orig: !!str
+        "FEATURES+=usb\n"
+      fix: !!str
+        "FEATURES+=usb rtc\n"
+      #mode: std, #add,#debug
+- patch:
+    path: /target/linux/ramips/dts/MTALL.dts
+    items:
+    - name: 设备RTC功能b
+      orig: !!str
+        "\twmac@10180000 {\n\
+		\t\tralink,mtd-eeprom = <&factory 0>;\n\
+	    \t};\n"
+      fix: !!str
+        "\n\n\ti2c-gpio {\n
+		\t\tcompatible = \"i2c-gpio\";\n
+        \t\t\n
+		\t\tgpios = <&gpio2 0 0 /* sda = wan_led */\n
+		\t\t\t&gpio3 0 0 /* scl = wlan_led */ >;\n
+		\t\ti2c-gpio,delay-us = <10>;/* ~20hz */\n
+		\t\t#address-cells = <1>;\n
+		\t\t#size-cells = <0>;\n
+        \t\t\n
+		\t\trtc@68 {\n
+	    \t\t\tcompatible = \"dallas,ds1307\";\n
+		\t\t\treg = <0x68>;\n
+		\t\t};\n
+	    \t};\n"
+      mode: add,#debug
+- patch:
+    path: /target/linux/ramips/dts/MTALL16M.dts
+    items:
+    - name: 设备RTC功能c
+      orig: !!str
+        "\twmac@10180000 {\n\
+		\t\tralink,mtd-eeprom = <&factory 0>;\n\
+	    \t};\n"
+      fix: !!str
+        "\n\n\ti2c-gpio {\n
+		\t\tcompatible = \"i2c-gpio\";\n
+        \t\t\n
+		\t\tgpios = <&gpio2 0 0 /* sda = wan_led */\n
+		\t\t\t&gpio3 0 0 /* scl = wlan_led */ >;\n
+		\t\ti2c-gpio,delay-us = <10>;/* ~20hz */\n
+		\t\t#address-cells = <1>;\n
+		\t\t#size-cells = <0>;\n
+        \t\t\n
+		\t\trtc@68 {\n
+	    \t\t\tcompatible = \"dallas,ds1307\";\n
+		\t\t\treg = <0x68>;\n
+		\t\t};\n
+	    \t};\n"
+      mode: add,#debug
+- patch:
+    #path: /.config
+    path: [
+      /target/linux/ramips/mt7620/config-3.14,
+      /target/linux/ramips/mt7620/config-default,
+    ]
+    items:
+    - name: 设备RTC功能d
+      cfgs: [
+        CONFIG_I2C=y,
+        {
+          i: CONFIG_I2C,
+          c: [
+            CONFIG_I2C_BOARDINFO=y,
+            CONFIG_I2C_CHARDEV=y,
+            CONFIG_I2C_ALGOBIT=y,
+            CONFIG_I2C_GPIO=y,
+            CONFIG_I2C_RALINK=y,
+          ]
+        },
+        CONFIG_RTC_CLASS=y,
+        CONFIG_RTC_HCTOSYS=y,
+        CONFIG_RTC_SYSTOHC=y,
+        CONFIG_RTC_HCTOSYS_DEVICE="rtc0",
+        CONFIG_RTC_INTF_SYSFS=y,
+        CONFIG_RTC_INTF_PROC=y,
+        CONFIG_RTC_INTF_DEV=y,
+        CONFIG_RTC_DRV_CMOS=y,
+        CONFIG_RTC_DRV_DS1307=y,
+      ]
+      mode: config
+- patch:
+    used: no
+    path: /.config
+    items:
+    - name: 设备RTC功能e
+      cfgs: [
+        CONFIG_PACKAGE_kmod-i2c-core=y,
+        {
+          i: CONFIG_PACKAGE_kmod-i2c-core,
+          c: [
+            CONFIG_PACKAGE_kmod-i2c-algo-bit=y,
+            CONFIG_PACKAGE_kmod-i2c-algo-pca=n,
+            CONFIG_PACKAGE_kmod-i2c-algo-pcf=n,
+            CONFIG_PACKAGE_kmod-i2c-gpio=y,
+          ]
+        },
+        CONFIG_PACKAGE_kmod-i2c-gpio-custom=y,
+        {
+          i: CONFIG_PACKAGE_kmod-i2c-gpio-custom,
+          c: [
+            CONFIG_PACKAGE_kmod-i2c-mux=y,
+            CONFIG_PACKAGE_kmod-i2c-mux-gpio=y,
+            CONFIG_PACKAGE_kmod-i2c-mux-pca9541=n,
+            CONFIG_PACKAGE_kmod-i2c-mux-pca954x=n,
+            CONFIG_PACKAGE_kmod-i2c-ralink=y,
+            CONFIG_PACKAGE_kmod-i2c-tiny-usb=n,
+          ]
+        },
+      ]
+      mode: config

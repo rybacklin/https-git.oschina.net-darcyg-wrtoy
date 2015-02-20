@@ -257,6 +257,7 @@ class patchProj:
                 continue
             objs=self.get_yaml_patchobj(p)
             if (objs!=None):
+                #print objs
                 if ("patchs" in objs):
                     if ("used" in objs["patchs"]):
                       chk_used = objs["patchs"]["used"]
@@ -269,6 +270,9 @@ class patchProj:
                       chk_platform = objs["patchs"]["platform"]
                       if isinstance(chk_platform,list): pass
                       elif isinstance(chk_platform, str): chk_platform = [ chk_platform.lower() ]
+                      if ("-"+self.platform in chk_platform) or ("!"+self.platform in chk_platform):
+                          print_line("-5, 忽略补丁(平台) %03d : %s "%(i,fname),char="#")
+                          continue
                       if not (self.platform in chk_platform):
                           print_line("-5, 忽略补丁(平台) %03d : %s "%(i,fname),char="#")
                           continue
@@ -276,6 +280,9 @@ class patchProj:
                       chk_projs = objs["patchs"]["projs"]
                       if isinstance(chk_projs,list): pass
                       elif isinstance(chk_projs, str): chk_projs = [ chk_projs.lower() ]
+                      if ("-"+self.proj_name in chk_projs) or ("+"+self.proj_name in chk_projs):
+                          print_line("-5, 忽略补丁(项目) %03d : %s "%(i,fname),char="#")
+                          continue
                       if not (self.proj_name in chk_projs):
                           print_line("-5, 忽略补丁(项目) %03d : %s "%(i,fname),char="#")
                           continue
@@ -290,6 +297,9 @@ class patchProj:
                       chk_platform = objs["patch"]["platform"]
                       if isinstance(chk_platform,list): pass
                       elif isinstance(chk_platform, str): chk_platform = [ chk_platform.lower() ]
+                      if ("-"+self.platform in chk_platform) or ("!"+self.platform in chk_platform):
+                          print_line("-5, 忽略补丁(平台) %03d : %s "%(i,fname),char="#")
+                          continue
                       if not (self.platform in chk_platform):
                           print_line("-5, 忽略补丁(平台) %03d : %s "%(i,fname),char="#")
                           continue
@@ -297,6 +307,9 @@ class patchProj:
                       chk_projs = objs["patch"]["projs"]
                       if isinstance(chk_projs,list): pass
                       elif isinstance(chk_projs, str): chk_projs = [ chk_projs.lower() ]
+                      if ("-"+self.proj_name in chk_projs) or ("+"+self.proj_name in chk_projs):
+                          print_line("-5, 忽略补丁(项目) %03d : %s "%(i,fname),char="#")
+                          continue
                       if not (self.proj_name in chk_projs):
                           print_line("-5, 忽略补丁(项目) %03d : %s "%(i,fname),char="#")
                           continue
@@ -316,52 +329,76 @@ class patchProj:
 
     def apply_patch_yaml(self,yamlobj):
         if "path" in yamlobj:
-            path=self.sourcecode_dir+yamlobj["path"]
-            if os.path.exists(path):
-                content=""
-                isWrite=os.path.isfile(path)
-                if isWrite:
-                    content=readfile(path)
-                i=0
-                print "apply patch file:",yamlobj["path"], ("[file]" if isWrite else "[dir]"),
-                if ("used" in yamlobj):
-                    chk_used = yamlobj["used"]
-                    if isinstance(chk_used,bool): chk_used = "yes" if chk_used else "no"
-                    elif isinstance(chk_used, str): chk_used = chk_used.lower()
-                    if chk_used == "n" or chk_used == "no" or chk_used == "false":
-                        print ": config set not used."
-                        return
-                    else: print ""
-                else: print ""
-                for item in yamlobj["items"]:
-                    hash_before=hash_after=""
-                    if ("name" in item):print " "+item["name"].encode("utf8")
-                    print "  apply patch item [",i,"]:",
-                    if isWrite:hash_before=md5(content)
-                    content=self.apply_patch_yaml_item(content,item)
-                    if isWrite:hash_after=md5(content)
-                    if (isinstance(content,bool)):
-                        print "yes" if content else "no"
-                    else:
-                        if len(hash_before)>0 and hash_before == hash_after:
-                            print "skip"
-                        else: print "apply"
-                        i+=1
-                        if self.show:
-                            print "orig:"
-                            print item["orig"]
-                            print "fix:"
-                            print item["fix"]
-                if self.show:
-                    print content
-                if isWrite and self.write_fix:
-                    writefile(path+".fix",content)
-                if isWrite and self.write:
-                    writefile(path,content)
-                if self.write and os.path.exists(path+".fix"):
-                    os.remove(path+".fix")
-            else:
-                print "not patch file:",path
+            paths=yamlobj["path"]
+            if isinstance(paths,list):pass
+            elif isinstance(paths,str): paths=[yamlobj["path"]]
+            else: paths=[]
+            for spath in paths:
+                path=self.sourcecode_dir+spath
+                if os.path.exists(path):
+                    content=""
+                    isWrite=os.path.isfile(path)
+                    if isWrite:
+                        content=readfile(path)
+                    i=0
+                    print "apply patch file:",yamlobj["path"], ("[file]" if isWrite else "[dir]"),
+                    if ("used" in yamlobj):
+                        chk_used = yamlobj["used"]
+                        if isinstance(chk_used,bool): chk_used = "yes" if chk_used else "no"
+                        elif isinstance(chk_used, str): chk_used = chk_used.lower()
+                        if chk_used == "n" or chk_used == "no" or chk_used == "false":
+                            print ": config set not used."
+                            return
+                        else: print ""
+                    if ("platform" in yamlobj):
+                        chk_platform = yamlobj["platform"]
+                        if isinstance(chk_platform,list): pass
+                        elif isinstance(chk_platform, str): chk_platform = [ chk_platform.lower() ]
+                        if ("-"+self.platform in chk_platform) or ("!"+self.platform in chk_platform):
+                            print ": config set not support this platform."
+                            return
+                        if not (self.platform in chk_platform):
+                            print ": config set not support this platform."
+                            return
+                    if ("projs" in yamlobj):
+                        chk_projs = yamlobj["projs"]
+                        if isinstance(chk_projs,list): pass
+                        elif isinstance(chk_projs, str): chk_projs = [ chk_projs.lower() ]
+                        if ("-"+self.proj_name in chk_projs) or ("!"+self.proj_name in chk_projs):
+                            print ": config set not support this project."
+                            return
+                        if not (self.proj_name in chk_projs):
+                            print ": config set not support this project."
+                            return
+                    for item in yamlobj["items"]:
+                        hash_before=hash_after=""
+                        if ("name" in item):print " "+item["name"].encode("utf8")
+                        print "  apply patch item [",i,"]:",
+                        if isWrite:hash_before=md5(content)
+                        content=self.apply_patch_yaml_item(content,item)
+                        if isWrite:hash_after=md5(content)
+                        if (isinstance(content,bool)):
+                            print "yes" if content else "no"
+                        else:
+                            if len(hash_before)>0 and hash_before == hash_after:
+                                print "skip"
+                            else: print "apply"
+                            i+=1
+                            if self.show:
+                                print "orig:"
+                                print item["orig"]
+                                print "fix:"
+                                print item["fix"]
+                    if self.show:
+                        print content
+                    if isWrite and self.write_fix:
+                        writefile(path+".fix",content)
+                    if isWrite and self.write:
+                        writefile(path,content)
+                    if self.write and os.path.exists(path+".fix"):
+                        os.remove(path+".fix")
+                else:
+                    print "not patch file:",path
 
     def apply_patch_yaml_item(self,content,patch):
         item=patch

@@ -59,7 +59,7 @@ set_jcfg_item .build.proj $proj
 #./build.sh c2d
 #./build.sh nf #clean and update all feeds
 #./build.sh fc #commonpack
-if [ "$m" == "i" ]; then
+if [ "$m" == "i" -o "$m" == "r" ]; then
   ./build.sh hw
   ./build.sh f $is_proxychains
   #./build.sh m

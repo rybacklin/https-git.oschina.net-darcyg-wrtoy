@@ -52,3 +52,5 @@ uci commit fstab
 
 /etc/init.d/fstab enable
 /etc/init.d/fstab restart
+
+echo "================>fstab" >> /var/log/initlog

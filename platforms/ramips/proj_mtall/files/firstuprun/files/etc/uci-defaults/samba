@@ -7,9 +7,9 @@
 
 [ ! -f /etc/config/samba ] && exit 0
 
-uci set samba.@samba[0].name=SC-Media-Station
+uci set samba.@samba[0].name=mtall-devboard
 uci set samba.@samba[0].workgroup=WORKGROUP
-uci set samba.@samba[0].description="SC Media Station"
+uci set samba.@samba[0].description="MTALL-OpenWrt-DevBoard"
 uci set samba.@samba[0].homes=1
 
 uci add samba sambashare
@@ -32,4 +32,6 @@ uci commit samba
 
 /etc/init.d/samba enable
 /etc/init.d/samba restart
+
+echo "================>samba" >> /var/log/initlog
 

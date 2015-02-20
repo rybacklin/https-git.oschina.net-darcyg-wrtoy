@@ -1,0 +1,632 @@
+#!/bin/bash
+
+source common/common.sh common
+
+function get_config_var()
+{
+  local ppath=$(get_profile_path)
+  [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+  [ -z "$cfg" ] && cfg="{}"
+  echo $(tmp=$(echo "$cfg" | jq ".$1" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+}
+
+function get_feed_config_var()
+{
+  local ppath=$(get_profile_path)
+  [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+  [ -z "$cfg" ] && cfg="{}"
+  local packname=$1
+  local mode
+  [ -z "$2" -o "$2" == "source" -o "$2" == "src" ] && mode="source" || mode="hash"
+  [ -z "$packname" ] && echo 0 || \
+    echo $(tmp=$(echo "$cfg" | jq ".feeds.$packname.$mode" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+}
+
+function set_feed_config_var()
+{
+  local ppath=$(get_profile_path)
+  [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+  [ -z "$cfg" ] && cfg="{}"
+  local packname=$1
+  local src=$2
+  local hash=$3
+  local opt=".id=0"
+  local orig="$opt"
+  if [ ! -z "$packname" ]; then
+    [ ! -z "$src" ] && opt="$opt | .feeds.$packname.source=\"$src\""
+    opt="$opt | .feeds.$packname.hash=\"$hash\""
+    [ $verbose == true ] && lang "feeds name   : $packname" "feeds 名 称 : $packname"
+    [ $verbose == true ] && lang "feeds source : $src" "feeds 数据源: $src"
+    [ $verbose == true ] && lang "feeds commit : $hash" "feeds 标 记 : $hash"
+    [ "$orig" != "$opt" ] && ( \
+        tmp=$(echo "$cfg" | jq "$opt"); \
+        echo $tmp > $ppath; \
+        [ $verbose == true ] && echo $tmp ; \
+        lang "config change saved." "配置发生改变并储存" \
+      ) || lang "no save." "配置未变更"
+  else
+    lang "no input feeds name." "请输入feeds名称"
+  fi
+}
+
+function del_feed_config()
+{
+  local ppath=$(get_profile_path)
+  [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+  [ -z "$cfg" ] && cfg="{}"
+  local packname=$1
+  if [ ! -z "$packname" ]; then
+    [ $verbose == true ] && lang "feeds name   : $packname" "feeds 名 称 : $packname"
+    tmp=$(echo "$cfg" | jq "del(.feeds.$packname)")
+    echo $tmp > g
+    [ $verbose == true ] && echo $tmp
+    [ "$tmp" != "$cfg" ] && lang "config change saved." "配置发生改变并储存" || lang "no save." "配置未变更"
+  else
+    lang "no input feeds name." "请输入feeds名称"
+  fi
+}
+
+function load_hard_profile()
+{
+  local ppath=$(get_profile_path)
+  [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+  [ -z "$cfg" ] && cfg="{}"
+  op_hp=$(tmp=$(echo "$cfg" | jq ".profile_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_bn=$(tmp=$(echo "$cfg" | jq ".board_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_bt=$(tmp=$(echo "$cfg" | jq ".board_tag" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_pf=$(tmp=$(echo "$cfg" | jq ".platform" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_cn=$(tmp=$(echo "$cfg" | jq ".chip_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_tr=$(tmp=$(echo "$cfg" | jq ".tftp_root" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_tl=$(tmp=$(echo "$cfg" | jq ".tftp_link" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_bf=$(tmp=$(echo "$cfg" | jq ".bin_file" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_ud=$(tmp=$(echo "$cfg" | jq ".usb_dev" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_rh=$(tmp=$(echo "$cfg" | jq ".release_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_bh=$(tmp=$(echo "$cfg" | jq ".beta_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_ch=$(tmp=$(echo "$cfg" | jq ".current_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  #$([ $(tmp=$(echo "$cfg" | jq ".usb_dev" -r);echo "$tmp") != "null" ] && echo $tmp || echo "")
+}
+
+function copy_config_var()
+{
+  [ "$usb_dev" == "def" ] && usb_dev=" "
+  [ "$release_hash" == "def" ] && release_hash=" "
+  [ "$beta_hash" == "def" ] && beta_hash=" "
+  [ "$current_hash" == "def" ] && current_hash=" "
+  [ "$bin_file" == "def" ] && bin_file=" "
+  [ ! -z "$op_hp" -a "$hard_profile" == ".hardware" -a "$op_hp" != ".hardware" ] && hard_profile=$op_hp
+  [ ! -z "$op_bn" -a -z "$board_name" ] && board_name=$op_bn
+  [ ! -z "$op_bt" -a -z "$board_tag" ] && board_tag=$op_bt
+  [ ! -z "$op_pf" -a -z "$platform" ] && platform=$op_pf
+  [ ! -z "$op_cn" -a -z "$chip_name" ] && chip_name=$op_cn
+  [ ! -z "$op_tr" -a -z "$tftp_root" ] && tftp_root=$op_tr
+  [ ! -z "$op_tl" -a -z "$tftp_link" ] && tftp_link=$op_tl
+  [ ! -z "$op_bf" -a -z "$bin_file" ] && bin_file=$op_bf
+  [ ! -z "$op_ud" -a -z "$usb_dev" ] && usb_dev=$op_ud
+  [ ! -z "$op_rh" -a -z "$release_hash" ] && release_hash=$op_rh
+  [ ! -z "$op_bh" -a -z "$beta_hash" ] && beta_hash=$op_bh
+  [ ! -z "$op_bh" -a -z "$current_hash" ] && current_hash=$op_ch
+}
+
+function save_hard_profile()
+{
+  local opt=".id=0"
+  local orig="$opt"
+  local cfg=""
+  [ "$op_hp" != "$hard_profile" -a ! -z "$hard_profile" -a "$hard_profile" != ".hardware" ] && opt="$opt | .profile_name=
+  \"$hard_profile\""
+  [ "$op_bn" != "$board_name" -a ! -z "$board_name" ] && opt="$opt | .board_name=\"$board_name\""
+  [ "$op_bt" != "$board_tag" -a ! -z "$board_tag" ] && opt="$opt | .board_tag=\"$board_tag\""
+  [ "$op_pf" != "$platform" -a ! -z "$platform" ] && opt="$opt | .platform=\"$platform\""
+  [ "$op_cn" != "$chip_name" -a ! -z "$chip_name" ] && opt="$opt | .chip_name=\"$chip_name\""
+  [ "$op_tr" != "$tftp_root" -a ! -z "$tftp_root" ] && opt="$opt | .tftp_root=\"$tftp_root\""
+  [ "$op_tl" != "$tftp_link" -a ! -z "$tftp_link" ] && opt="$opt | .tftp_link=\"$tftp_link\""
+  [ "$op_bf" != "$bin_file" ] && opt="$opt | .bin_file=\"$bin_file\""
+  [ "$op_ud" != "$usb_dev" ] && opt="$opt | .usb_dev=\"$usb_dev\""
+  [ "$op_rh" != "$release_hash" ] && opt="$opt | .release_hash=\"$release_hash\""
+  [ "$op_ud" != "$beta_hash" ] && opt="$opt | .beta_hash=\"$beta_hash\""
+  [ "$op_ch" != "$current_hash" ] && opt="$opt | .current_hash=\"$current_hash\""
+  local ppath=$(get_profile_path)
+  [ -f $ppath ] && cfg=$(cat $ppath)
+  [ -z "$cfg" ] && cfg="{}"
+  [ "$orig" != "$opt" ] && ( \
+      tmp=$(echo "$cfg" | jq "$opt"); \
+      echo $tmp > $ppath; \
+      [ $verbose == true ] && echo $tmp ; \
+      lang "config change saved." "配置发生改变并储存" \
+    ) || lang "no save." "配置未变更"
+}
+
+function show_config_var()
+{
+  show i $(lang "show hardware profiles:" "显示硬件配置文件信息")
+  local ppath=$(get_profile_path)
+  local profile_name=$(get_config_var profile_name)
+  show l
+  if [ $verbose == false ]; then
+    echo " profile path  :" $ppath
+    echo " profile_name  :" $profile_name
+    echo " board_name    :" $board_name
+    echo " board_tag     :" $board_tag
+    echo " platform      :" $platform
+    echo " chip_name     :" $chip_name
+    echo " tftp_root     :" $tftp_root
+    echo " tftp_link     :" $tftp_link
+    echo " bin_file      :" $bin_file
+    echo " usb_dev       :" $usb_dev
+    echo " release_hash  :" $release_hash
+    echo " beta_hash     :" $beta_hash
+    echo " current_hash  :" $current_hash
+  else
+    echo " profile path  :" $ppath
+    echo " profile_name  :" $profile_name "($op_hp)"
+    echo " board_name    :" $board_name "($op_bn)"
+    echo " board_tag     :" $board_tag "($op_bt)"
+    echo " platform      :" $platform "($op_pf)"
+    echo " chip_name     :" $chip_name "($op_cn)"
+    echo " tftp_root     :" $tftp_root "($op_tr)"
+    echo " tftp_link     :" $tftp_link "($op_tl)"
+    echo " bin_file      :" $bin_file "($op_bf)"
+    echo " usb_dev       :" $usb_dev "($op_ud)"
+    echo " release_hash  :" $release_hash "($op_rh)"
+    echo " beta_hash     :" $beta_hash "($op_bh)"
+    echo " current_hash  :" $current_hash "($op_ch)"
+  fi
+  show l
+}
+
+function action_list_profiles()
+{
+  show i $(lang "list hardware profiles:" "列表所有硬件配置文件名称")
+  ls "$op_root/profiles/" | grep -v "~" | sort | awk -F"." '!a[$1]++{print "  "$1}'
+  doaction=true
+}
+
+function action_use_profile()
+{
+  show i $(lang "link hardware profiles to .hardware:" "设置硬件配置文件为编译默认选项")
+  [ -z "$use_profile" ] && use_profile="default"
+  if [ ! -z "$use_profile" -a -f "$op_hp_dir/$use_profile.json" ]; then
+    show s $(lang "'$use_profile' hardware profiles => .hardware" "'$use_profile' 硬件配置文件链接到 .hardware")
+    [ -f "$op_root/.hardware" ] && rm -f "$op_root/.hardware"
+    ln -s "$op_hp_dir/$use_profile.json" "$op_root/.hardware"
+  else
+    show s $(lang "'$use_profile' hardware profiles not exists!" "'$use_profile'硬件配置文件不存在")
+  fi
+  doaction=true
+}
+
+function action_remove_profile()
+{
+  show i $(lang "remove select hardware profile:" "删除一个硬件配置文件")
+  if [ -z "$remove_profile" ]; then
+    show s $(lang "please input hardware profile name" "请输入要删除的硬件配置文件名")
+    exit 0
+  fi
+  if [ -f "$op_hp_dir/$remove_profile.json" ]; then
+    read -p $(lang "  are you remove '$remove_profile' hardware profile(Y/n):" "  确认删除'$remove_profile'硬件配置文件(Y/n):") request
+    if [ "$request" == "y" -o "$request" == "Y" -o "$request" == "yes" ]; then
+      show s $(lang "remove '$remove_profile' hardware profile success" "成功删除'$remove_profile'硬件配置文件")
+      rm -f "$op_hp_dir/$remove_profile.json"
+      if [ -e "$op_root/.hardware" ]; then
+        rm -f "$op_root/.hardware"
+        show s $(lang "remove '.hardware' profile success" "成功删除'.hardware'硬件配置文件软链")
+      fi
+    else
+      show s $(lang "remove '$remove_profile' hardware profile failed" "删除'$remove_profile'硬件配置文件失败")
+    fi
+  fi
+  doaction=true
+}
+
+function action_new_profile()
+{
+  show i $(lang "add new hardware profile:" "产生新的硬件配置文件")
+  action_set_default_config
+  [ ! -z "$add_profile" ] && hard_profile=$add_profile
+  #echo $hard_profile
+  show_config_var
+  [ $only_show == true ] && echo $(lang "only show changed. don't write config" "仅显示变更，不写配置文件") || save_hard_profile
+  doaction=true
+}
+
+function action_set_default_config()
+{
+  show i $(lang "list hardware profiles:" "设置默认配置")
+  #hard_profile="default"
+  board_name="wrtoy"
+  board_tag="WRTOY"
+  platform="ramips"
+  chip_name="mt7620"
+  tftp_root="$op_tl_dir"
+  tftp_link="wrtbin"
+  usb_dev=""
+  release_hash=""
+  beta_hash=""
+  current_hash=""
+}
+
+function action_list_feeds()
+{
+  show i $(lang "show project's feeds config:" "显示项目feeds配置信息")
+  local ppath=$(get_profile_path)
+  [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+  [ -z "$cfg" ] && cfg="{}"
+  local flen=$(echo "$cfg" | jq ".feeds | length" -r)
+  local feed_name
+  local feed_src
+  local feed_hash
+  show l
+  for((i=0;i<$flen;i++))
+  do
+    feed_name=$(echo "$cfg" | jq ".feeds | keys | .[$i]" -r)
+    feed_src=$(echo "$cfg" | jq ".feeds.$feed_name.source" -r)
+    feed_hash=$(echo "$cfg" | jq ".feeds.$feed_name.hash" -r)
+    [ "$feed_hash" == "null" ] && feed_hash=""
+    echo " $i.[$feed_name] $feed_src $feed_hash"
+    show l
+  done
+}
+
+function action_add_feeds()
+{
+  show i $(lang "add feeds new config:" "增加新feeds配置信息")
+  [ -z "$feeds_source" ] && lang "no feeds source" "没有feeds数据源"
+  [ ! -z "$add_feeds" ] && set_feed_config_var "$add_feeds" "$feeds_source" "$feeds_hash"
+}
+
+function action_edit_feeds()
+{
+  show i $(lang "edit feeds config:" "编辑feeds配置信息")
+  [ ! -z "$edit_feeds" ] && set_feed_config_var "$edit_feeds" "$feeds_source" "$feeds_hash"
+}
+
+function action_del_feeds()
+{
+  show i $(lang "delete feeds config:" "删除feeds配置信息")
+  [ ! -z "$delete_feeds" ] && del_feed_config "$delete_feeds"
+}
+
+function action_config()
+{
+  [ $doaction == true ] && exit 0
+  load_hard_profile
+  copy_config_var
+  show_config_var
+  [ $only_show == true ] && echo $(lang "only show changed. don't write config" "仅显示变更，不写配置文件") || save_hard_profile
+  [ $list_feeds == true ] && action_list_feeds
+  [ ! -z "$add_feeds" ] && (action_add_feeds; action_list_feeds)
+  [ ! -z "$edit_feeds" ] && (action_edit_feeds; action_list_feeds)
+  [ ! -z "$delete_feeds" ] && (action_del_feeds; action_list_feeds)
+  exit 0
+}
+
+function show_cfg_var()
+{
+  local tag
+  [ ! -z "$2" -a $verbose == true ] && tag="$2="
+  [ -z "$1" -o "$1" == " " ] && echo "$tag" || echo "$tag$1"
+}
+
+function action_get_cfg_var()
+{
+  [ ! -f "./.hardware" ] && exit 0
+  load_hard_profile
+  [ -z "$get_variable" -o "$get_variable" == "-" ] && get_variable="all"
+  [ "$get_variable" == "bn" -o \
+    "$get_variable" == "boardname" -o \
+    "$get_variable" == "board_name" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_bn" "board_name"
+
+  [ "$get_variable" == "bt" -o \
+    "$get_variable" == "boardtag" -o \
+    "$get_variable" == "board_tag" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_bt" "board_tag"
+
+  [ "$get_variable" == "pf" -o \
+    "$get_variable" == "platform" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_pf" "platform"
+
+  [ "$get_variable" == "cn" -o \
+    "$get_variable" == "chipname" -o \
+    "$get_variable" == "chip_name" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_cn" "chip_name"
+
+  [ "$get_variable" == "tr" -o \
+    "$get_variable" == "tftproot" -o \
+    "$get_variable" == "tftp_root" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_tr" "tftp_root"
+
+  [ "$get_variable" == "tl" -o \
+    "$get_variable" == "tftplink" -o \
+    "$get_variable" == "tftp_link" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_tl" "tftp_link"
+
+  [ "$get_variable" == "ud" -o \
+    "$get_variable" == "usbdev" -o \
+    "$get_variable" == "usb_dev" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_ud" "usb_dev"
+
+  [ "$get_variable" == "rh" -o \
+    "$get_variable" == "releasehash" -o \
+    "$get_variable" == "release_hash" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_rh" "release_hash"
+
+  [ "$get_variable" == "bh" -o \
+    "$get_variable" == "betahash" -o \
+    "$get_variable" == "beta_hash" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_bh" "beta_hash"
+
+  [ "$get_variable" == "ch" -o \
+    "$get_variable" == "currenthash" -o \
+    "$get_variable" == "current_hash" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_ch" "current_hash"
+
+  if [ "$get_variable" == "bf" -o \
+    "$get_variable" == "binfile" -o \
+    "$get_variable" == "bin_file" -o \
+    "$get_variable" == "all" ]; then
+    local bf=$(show_cfg_var "$op_bf")
+    if [ ! -z "$bf" ]; then
+      echo "$bf"
+    else
+      if [ "$op_pf" == "ramips" ]; then
+        show_cfg_var "openwrt-$op_pf-$op_cn-$op_bn-squashfs-sysupgrade.bin" "bin_file"
+      elif [ "$op_pf" == "x86" ]; then
+        show_cfg_var "openwrt-$op_pf-$op_bn-combined-ext4.img" "bin_file"
+      elif [ "$op_pf" == "rpi" ]; then
+        show_cfg_var "openwrt-brcm2708-sdcard-vfat-ext4.img" "bin_file"
+      fi
+    fi
+  fi
+
+  exit 0
+}
+
+doaction=false
+op_root=$(get_wrtoy_path)
+op_wrtoy_dir=$(get_wrtoy_path ..)
+op_hp_dir=$(get_wrtoy_path profiles)
+op_tl_dir=$(get_wrtoy_path ../tftproot)
+op_dir=$(get_wrtoy_path ../openwrt)
+
+#======================================================
+help_hard_profile=$(lang \
+  "set hardware profile name" \
+  "设置硬件配置名称(如果为空，则存在.hardware软链默认用软链，否则用default)")
+
+addOption -hp   --hardware-profile \
+  dest=hard_profile \
+  help="$help_hard_profile"
+
+#======================================================
+help_board_name=$(lang \
+  "set board name" \
+  "设置硬件主板名称")
+
+addOption -bn   --board-name \
+  dest=board_name \
+  help="$help_board_name"
+
+#======================================================
+help_board_tag=$(lang \
+  "set board tag" \
+  "设置硬件标识（和DTS一致）")
+
+addOption -bt   --board-tag \
+  dest=board_tag \
+  help="$help_board_tag"
+
+#======================================================
+help_platform=$(lang \
+  "set platform name" \
+  "设置平台信息")
+
+addOption -pf   --platform \
+  dest=platform \
+  help="$help_platform"
+
+#======================================================
+help_chip_name=$(lang \
+  "set chip name" \
+  "设置主控芯片名称")
+
+addOption -cn   --chip-name \
+  dest=chip_name \
+  help="$help_chip_name"
+
+#======================================================
+help_tftp_root=$(lang \
+  "set tftp server root directory" \
+  "设置tftp服务根目录")
+
+addOption -tr   --tftp-root \
+  dest=tftp_root \
+  help="$help_tftp_root"
+
+#======================================================
+help_tftp_link=$(lang \
+  "set openwrt firmware short link name form tftp server root directory" \
+  "设置产生的openwrt固件在tftp中的软链名称")
+
+addOption -tl   --tftp-link \
+  dest=tftp_link \
+  help="$help_tftp_link"
+
+#======================================================
+help_usb_dev=$(lang \
+  "set usb device path" \
+  "设置usb设备文件路径")
+
+addOption -ud   --usb-dev \
+  default=def dest=usb_dev \
+  help="$help_usb_dev"
+
+#======================================================
+help_release_hash=$(lang \
+  "set openwrt release build hash" \
+  "设置openwrt发布版构建hash")
+
+addOption -rh   --release-hash \
+  default=def dest=release_hash \
+  help="$help_release_hash"
+
+#======================================================
+help_beta_hash=$(lang \
+  "set openwrt beta build hash" \
+  "设置openwrt测试版构建hash")
+
+addOption -bh   --beta-hash \
+  default=def dest=beta_hash \
+  help="$help_beta_hash"
+
+#======================================================
+help_current_hash=$(lang \
+  "set openwrt current/work build hash" \
+  "设置openwrt当前/工作版本构建hash")
+
+addOption -ch   --current-hash \
+  default=def dest=current_hash \
+  help="$help_current_hash"
+
+#======================================================
+help_bin_file=$(lang \
+  "set copy openwrt's build image file to tftproot" \
+  "设置向tftp复制的openwrt生成的镜像文件")
+
+addOption -bf   --bin-file \
+  default=def dest=bin_file \
+  help="$help_bin_file"
+
+#======================================================
+help_list_feeds=$(lang \
+  "list all feeds" \
+  "列表所有的feeds")
+
+addOption -lf   --list-feeds \
+  flagTrue dest=list_feeds \
+  help="$help_list_feeds"
+
+#======================================================
+help_add_feeds=$(lang \
+  "add new feeds" \
+  "增加一个feeds")
+
+addOption -af   --add-feeds \
+  dest=add_feeds \
+  help="$help_add_feeds"
+
+#======================================================
+help_edit_feeds=$(lang \
+  "edit select feeds" \
+  "编辑一个feeds")
+
+addOption -ef   --edit-feeds \
+  dest=edit_feeds \
+  help="$help_edit_feeds"
+
+#======================================================
+help_delete_feeds=$(lang \
+  "delete select feeds" \
+  "删除一个feeds")
+
+addOption -df   --delete-feeds \
+  dest=delete_feeds \
+  help="$help_delete_feeds"
+
+#======================================================
+help_feeds_source=$(lang \
+  "set feeds source" \
+  "设置feeds的源")
+
+addOption -fs   --feeds-source \
+  dest=feeds_source \
+  help="$help_feeds_source"
+
+#======================================================
+help_feeds_hash=$(lang \
+  "set feeds git commit" \
+  "设置feeds的库git版本")
+
+addOption -fh   --feeds-hash \
+  dest=feeds_hash \
+  help="$help_feeds_hash"
+
+#======================================================
+help_get_var=$(lang \
+  "get .hardwave profile env variable" \
+  "获取当前配置(.hardware)相关变量")
+
+addOption -gv   --get-var \
+  action=action_get_cfg_var dest=get_variable \
+  help="$help_get_var"
+
+#======================================================
+help_add_profile=$(lang \
+  "add new hardware profile (use default config)" \
+  "加入新的硬件配置文件(用默认配置)")
+
+addOption -a   --add-profile \
+  action=action_new_profile dest=add_profile \
+  help="$help_add_profile"
+
+#======================================================
+help_remove_profile=$(lang \
+  "remove select hardware profile" \
+  "删除一个硬件配置文件")
+
+addOption -r   --remove-profile \
+  action=action_remove_profile dest=remove_profile \
+  help="$help_remove_profile"
+
+#======================================================
+help_list_profiles=$(lang \
+  "list all hardware profiles" \
+  "列表所有硬件配置文件")
+
+addOption -l   --list-profiles \
+  action=action_list_profiles dest=list_profiles \
+  help="$help_list_profiles"
+
+#======================================================
+help_use_profile=$(lang \
+  "link hardware profiles to .hardware" \
+  "设置硬件配置文件为编译默认选项(.hardware)")
+
+addOption -u   --use-profile \
+  action=action_use_profile dest=use_profile \
+  help="$help_use_profile"
+
+#======================================================
+help_only_show=$(lang \
+  "only show change don't write" \
+  "仅显示数据变更不写入文件")
+
+addOption -s   --only-show \
+  flagTrue dest=only_show \
+  help="$help_only_show"
+
+#======================================================
+help_verbose=$(lang \
+  "show verbose" \
+  "显示更多调试信息")
+
+addOption -v   --verbose \
+  flagTrue dest=verbose \
+  help="$help_verbose"
+
+#======================================================
+
+parseOptions "$@"
+
+action_config
+

@@ -1,0 +1,65 @@
+#!/bin/sh
+
+syscfg=/etc/config/system
+
+[ ! -f $syscfg ] && exit 0
+#touch $syscfg
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+MACLAST6D=`ifconfig -a eth0 | grep eth0 | awk '{print $5}' | awk -F : '{print $4""$5""$6}'`
+
+BOARDNAMEA="MTALL OpenWrt DevBoard"
+BOARDNAMEF="MTALL-OpenWrt-DevBoard"
+BOARDNAMES="openwrt-mtall"
+BOARDNAMER="MTALL DevBoard"
+BOARDNAMET="ramips(mtk)/mt7620"
+BOARDNAMEDA="Darcy.Gong & David.Gong & Manfeel"
+
+uci set system.@system[0].hostname=$BOARDNAMES
+uci set system.@system[0].timezone=CST-8
+
+uci commit system
+
+/ect/init.d/system restart
+
+VERSION="v1.0"
+
+initcfg='/etc/device_info'
+if [ -f $initcfg ]; then
+  DEVICE_MANUFACTURER='$BOARDNAMEF($MACLAST6D)'
+  DEVICE_PRODUCT=$BOARDNAMEA
+  DEVICE_REVISION=$VERSION
+
+  sed -i "s@^DEVICE_MANUFACTURER='OpenWrt'@#DEVICE_MANUFACTURER='$DEVICE_MANUFACTURER'@" $initcfg
+  sed -i "s@^DEVICE_PRODUCT='Generic'@#DEVICE_PRODUCT='$DEVICE_PRODUCT'@" $initcfg
+  sed -i "s@^DEVICE_REVISION='v0'@#DEVICE_MANUFACTURER='$DEVICE_REVISION'@" $initcfg
+fi
+
+initcfg='/etc/openwrt_release'
+if [ -f $initcfg ]; then
+  DISTRIB_ID=$BOARDNAMEA
+  DISTRIB_RELEASE=$BOARDNAMER
+  DISTRIB_REVISION=$VERSION
+  DISTRIB_CODENAME=$BOARDNAMEDA
+  DISTRIB_TARGET=$BOARDNAMET
+  DISTRIB_DESCRIPTION='$$BOARDNAMEF($MACLAST6D)'
+  DISTRIB_TAINTS='no-all busybox'
+
+  sed -i "s@^DISTRIB_ID='OpenWrt'@#DISTRIB_ID='$DISTRIB_ID'@" $initcfg
+  sed -i "s@^DISTRIB_RELEASE='Bleeding Edge'@#DISTRIB_RELEASE='$DISTRIB_RELEASE'@" $initcfg
+  sed -i "s@^DISTRIB_REVISION='unknown'@#DISTRIB_REVISION='$DISTRIB_REVISION'@" $initcfg
+  sed -i "s@^DISTRIB_CODENAME='chaos_calmer'@#DISTRIB_CODENAME='$DISTRIB_CODENAME'@" $initcfg
+  sed -i "s@^DISTRIB_TARGET='ramips/generic'@#DISTRIB_TARGET='$DISTRIB_TARGET'@" $initcfg
+  sed -i "s@^DISTRIB_DESCRIPTION='OpenWrt Chaos Calmer unknown'@#DISTRIB_DESCRIPTION='$DISTRIB_DESCRIPTION'@" $initcfg
+  sed -i "s@^DISTRIB_TAINTS='no-all busybox'@#DISTRIB_TAINTS='$DISTRIB_TAINTS'@" $initcfg
+fi
+
+initcfg='/etc/openwrt_version'
+if [ -f $initcfg ]; then
+  echo "$VERSION" > $initcfg
+fi
+
+echo "================>system" >> /var/log/initlog

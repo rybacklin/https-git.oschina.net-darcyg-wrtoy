@@ -1,0 +1,282 @@
+#!/bin/bash
+
+source common/common.sh common
+
+function check_wrtoy_sys_paths()
+{
+  local rootdir=$(get_wrtoy_path ..)
+  if [ ! -d $rootdir ]; then
+    chk_mkdir $rootdir
+  fi
+  chk_mkdir $rootdir/works
+  chk_mkdir $rootdir/backup
+  chk_mkdir $rootdir/dl
+  chk_mkdir $rootdir/staging_dir
+  chk_mkdir $rootdir/build_dir
+  chk_mkdir $rootdir/tftproot
+  chk_mkdir $rootdir/feeds
+  chk_mkdir $rootdir/feeds/rep
+  chk_mkdir $rootdir/feeds.git
+}
+
+function upgrade_wrtoy_git_project()
+{
+  local rootdir=$(get_wrtoy_path ..)
+  local project=$1
+  local giturl=$2
+
+  if [ -d "$rootdir" ]; then
+    if [ "$project" == "openwrt" ]; then
+      cd $rootdir
+      if [ ! -d $rootdir/$project.git -a ! -d $rootdir/$project.git/.git -a ! -f $rootdir/README ]; then
+        show i $(lang "clone $project." "克隆 $project")
+        git clone $giturl $project.git
+      else
+        show i $(lang "upgrade $project." "更新 $project")
+        cd $project.git
+        git pull
+      fi
+    else
+      cd $rootdir/feeds.git
+      if [ ! -d $rootdir/feeds.git/$project.git -a ! -d $rootdir/feeds.git/$project.git/.git ]; then
+        show i $(lang "clone $project." "克隆 $project")
+        git clone $giturl $project.git
+      else
+        show i $(lang "upgrade $project." "更新 $project")
+        cd $project.git
+        git pull
+      fi
+    fi
+  fi
+}
+
+function export_wrtoyg_git_project()
+{
+  local rootdir=$(get_wrtoy_path ..)
+  local project=$1
+  local githash=$2
+  local ppath
+  local pfix
+  local pbak
+  local dstpath
+  [ "$project" == "openwrt" ] && ppath=$rootdir/$project.git || ppath=$rootdir/feeds.git/$project.git
+  [ "$project" == "openwrt" ] && pfix="" || pfix="feeds_"
+  [ "$project" == "openwrt" ] && psub="works/" || psub="feeds/rep/"
+  [ "$project" == "openwrt" ] && dstpath=$rootdir/$project || dstpath=$rootdir/feeds/$project
+  pbak=$rootdir/backup
+  cd $ppath
+  if [ -z "$githash" -o "$githash" == " " -o "$githash" == "HEAD" ]; then
+    [ -z "$githash" -o "$githash" == " " ] && githash="HEAD"
+  fi
+  local git_prefix=$(git log $githash -1 --format="${psub}${project}_%ad_%h" --date=short)
+  local git_targz=$(git log $githash -1 --format="${pfix}${project}_%ad_%h.tar.gz" --date=short)
+  local proj_link=$(git log $githash -1 --format="${psub}${project}_%ad_%h" --date=short)
+  local current_hash=$([ "$githash" == "HEAD" ] && echo $(git log -1 --format="%H") || echo "$githash")
+  #echo "git_prefix: $git_prefix"
+  #echo "git_targz : $git_targz"
+  #echo "proj_link : $proj_link"
+  #echo "current_hash : $current_hash"
+
+  if [ ! -f $pbak/$git_targz -o ! -L $rootdir/$proj_link ]; then
+    show -i $(lang "export $project to tar.gz" "导出 $project")
+    #echo $githash
+    git archive --format=tar --prefix=$git_prefix/ $githash | gzip > $pbak/$git_targz
+    #echo "git archive --format=tar --prefix=$git_prefix/ $githash | gzip > $pbak/$git_targz"
+    #echo "$git_prefix" > $pbak/lastgit
+  fi
+  echo "$rootdir/$proj_link" "$git_targz"
+  cd $pbak
+  if [ ! -d $rootdir/$proj_link -a -f $git_targz ]; then
+    show -i $(lang "untar $project" "解压$project")
+    tar zxf $git_targz -C $rootdir
+    [ -d $rootdir/$proj_link -a ! -d $rootdir/$proj_link.orig ] && cp -rf $rootdir/$proj_link $rootdir/$proj_link.orig
+    #echo "tar zxvf $git_targz -C $rootdir/$proj_link"
+  fi
+  if [ -L $dstpath ]; then
+    rm -f $dstpath
+  fi
+  show -i $(lang "link $pfix$project" "链接项目$pfix$project")
+  if [ ! -L $dstpath -a -d $rootdir/$proj_link ]; then
+    ln -s $rootdir/$proj_link $dstpath
+  fi
+  [ -d $dstpath ] && cd $dstpath
+  if [ "$project" == "openwrt" ]; then
+    if [ -d $dstpath ]; then
+      if [ -d $rootdir/dl -a ! -L $dstpath/dl ]; then
+        show -i $(lang "link 'dl' directory" "链接dl目录")
+        [ -e $dstpath/dl ] && rm -f $dstpath/dl -
+        ln -s $rootdir/dl $dstpath/dl
+      fi
+      if [ -d $rootdir/staging_dir -a ! -L $dstpath/staging_dir ]; then
+        show -i $(lang "link 'staging_dir' directory" "链接staging_dir目录")
+        [ -e $dstpath/staging_dir ] && rm -f $dstpath/staging_dir
+        ln -s $rootdir/staging_dir $dstpath/staging_dir
+      fi
+      if [ -d $rootdir/build_dir -a ! -L $dstpath/build_dir ]; then
+        show -i $(lang "link 'build_dir' directory" "链接build_dir目录")
+        [ -e $dstpath/build_dir ] && rm -f $dstpath/build_dir
+        ln -s $rootdir/build_dir $dstpath/build_dir
+      fi
+      cd $op_root
+      ./hardware_manage -ch "$current_hash"
+      #if [ ! -f feeds.conf ]; then
+      #  show -i $(lang "复制feeds.conf文件")
+      #  cp feeds.conf.default feeds.conf
+      #fi
+    fi
+  else
+    echo "src-link $project $dstpath" >> $rootdir/openwrt/feeds.conf
+  fi
+}
+
+function get_hard_config()
+{
+  local ppath=$op_root/.hardware
+  local cfg
+  if [ -L "$ppath" ]; then
+    [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+    [ -z "$cfg" ] && cfg="{}"
+    echo '$cfg'
+  else
+    echo "{}"
+  fi
+}
+
+function upgrade_openwrt_source()
+{
+  #local cfg=$(get_hard_config)
+  local ppath=$op_root/.hardware
+  local cfg
+  if [ -L "$ppath" ]; then
+    [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+    [ -z "$cfg" ] && cfg="{}"
+  else
+    echo "{}"
+  fi
+  local mode=$1
+  if [ "$mode" == "release" -o "$mode" == "rh" -o "$mode" == "r" ]; then
+    mode="release_hash"
+  elif [ "$mode" == "beta" -o "$mode" == "bh" -o "$mode" == "b" ]; then
+    mode="beta_hash"
+  elif [ "$mode" == "current" -o "$mode" == "ch" -o "$mode" == "c" ]; then
+    mode="current_hash"
+  else
+    mode="lastgit"
+  fi
+  #$(echo "$cfg" | jq ".$mode" -r)
+  local hash=$(tmp=$(echo "$cfg" | jq ".$mode" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  upgrade_wrtoy_git_project openwrt http://git.openwrt.org/openwrt.git
+  export_wrtoyg_git_project openwrt "$hash"
+  #export_wrtoyg_git_project openwrt "006d662b38c42749ec0feb4b8bd407b0fd453a74"
+  #export_wrtoyg_git_project openwrt "d084b0cc0fecec5645c27e5482d4adcf193d1ab1"
+}
+
+function upgrade_feeds_source()
+{
+  if [ ! -z "$1" -a ! -z "$2" ]; then
+    upgrade_wrtoy_git_project "$1" "$2"
+    export_wrtoyg_git_project "$1" "$3"
+  fi
+}
+
+function upgrade_all_feeds_source()
+{
+  #local cfg=$(get_hard_config)
+  local ppath=$op_root/.hardware
+  local cfg
+  if [ -L "$ppath" ]; then
+    [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
+    [ -z "$cfg" ] && cfg="{}"
+  else
+    echo "{}"
+  fi
+  local flen=$(echo "$cfg" | jq ".feeds | length" -r)
+  local feed_name
+  local feed_src
+  local feed_hash
+  show l
+  for((i=0;i<$flen;i++))
+  do
+    feed_name=$(echo "$cfg" | jq ".feeds | keys | .[$i]" -r)
+    feed_src=$(echo "$cfg" | jq ".feeds.$feed_name.source" -r)
+    feed_hash=$(echo "$cfg" | jq ".feeds.$feed_name.hash" -r)
+    [ "$feed_hash" == "null" ] && feed_hash=""
+    echo " $i.[$feed_name] $feed_src $feed_hash"
+    upgrade_feeds_source "$feed_name" "$feed_src" "$feed_hash"
+    show l
+  done
+}
+
+function clear_feeds_conf()
+{
+  [ -f "$op_wrtoy_dir/openwrt/feeds.conf" ] && rm -f $op_wrtoy_dir/openwrt/feeds.conf
+}
+
+function action_feeds_upgrade()
+{
+  local op_dir=$(get_wrtoy_path ../openwrt)
+  cd $op_dir
+  ./scripts/feeds update -a
+  ./scripts/feeds install -a
+}
+
+function show_tips()
+{
+  echo "==========================="
+  echo "  现在可以编译openwrt 最新版了"
+  echo "  cd $rootdir/openwrt"
+  echo "  [option] ./scripts/feeds update -a"
+  echo "  [option] ./scripts/feeds install -a"
+  echo "  make defconfig"
+  echo "  make menuconfig"
+  echo "  [option] make download"
+  echo "  [screen] make V=99"
+  echo "  [screen] make -j 4 V=99"
+  echo "==========================="
+}
+
+function action_run()
+{
+  check_wrtoy_sys_paths
+  upgrade_openwrt_source "$upgarde_name"
+  [ $upgarde_feeds -a $upgarde_feeds == true ] && clear_feeds_conf
+  [ $upgarde_feeds -a $upgarde_feeds == true ] && upgrade_all_feeds_source
+  [ $upgarde_install -a $upgarde_install == true ] && action_feeds_upgrade
+  show_tips
+}
+
+op_root=$(get_wrtoy_path)
+op_wrtoy_dir=$(get_wrtoy_path ..)
+op_hp_dir=$(get_wrtoy_path profiles)
+op_tl_dir=$(get_wrtoy_path ../tftproot)
+
+#======================================================
+help_mode=$(lang \
+  "Use Openwrt git source mode(release/beta/current)" \
+  "Openwrt项目git源模式(release/beta/current)")
+
+addOption -m    --mode \
+    dest=upgarde_name \
+    help="$help_mode"
+
+#======================================================
+help_feeds=$(lang \
+  "upgrade feeds source" \
+  "更新feeds源")
+
+addOption -f    --feeds \
+    flagTrue dest=upgarde_feeds \
+    help="$help_feeds"
+
+#======================================================
+help_install=$(lang \
+  "install feeds source" \
+  "安装feeds源")
+
+addOption -i    --install \
+    flagTrue dest=upgarde_install \
+    help="$help_install"
+
+parseOptions "$@"
+
+action_run

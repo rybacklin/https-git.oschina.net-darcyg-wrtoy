@@ -1,0 +1,22 @@
+#!/bin/sh
+
+fcfg="/tmp/reboot"
+
+echo "#!/bin/sh" > $fcfg
+echo "sleep 30" >> $fcfg
+
+# 检测内存大小
+memsize=$(echo $(free | grep "Mem" | awk '{print $2}')/1024 | bc)
+tmpfs_size="16M"
+[ "$memsize" -gt "256" ] && tmpfs_size="10%"
+
+echo 'echo "mount -t tmpfs -o remount,rw,nosuid,nodev,noatime,size=$tmpfs_size tmpfs /tmp" > /etc/rc.local' >> $fcfg
+echo 'echo "echo 0" >> /etc/rc.local' >> $fcfg
+
+echo "reboot" >> $fcfg
+
+chmod a+x $fcfg
+
+$fcfg &
+
+echo "================>reboot" >> /var/log/initlog

@@ -1,0 +1,175 @@
+--- # 应用 camera
+patchs:
+- patch:
+    #used: no
+    path: /.config
+    items:
+    - name: 启用 udev
+      cfgs: [
+        CONFIG_PACKAGE_udev=y,
+        {
+          i: CONFIG_PACKAGE_udev,
+          c: [
+            CONFIG_UDEV_DISABLE_LOGGING=n,
+            CONFIG_UDEV_ENABLE_DEBUG=n,
+            CONFIG_UDEV_EXTRA_accelerometer=y,
+            CONFIG_UDEV_EXTRA_ata_id=y,
+            CONFIG_UDEV_EXTRA_cdrom_id=y,
+            CONFIG_UDEV_EXTRA_collect=n,
+            CONFIG_UDEV_EXTRA_edd_id=n,
+            CONFIG_UDEV_EXTRA_firmware=n,
+            CONFIG_UDEV_EXTRA_floppy=n,
+            CONFIG_UDEV_EXTRA_input_id=y,
+            CONFIG_UDEV_EXTRA_mtd_probe=y,
+            CONFIG_UDEV_EXTRA_path_id=y,
+            CONFIG_UDEV_EXTRA_qemu=y,
+            CONFIG_UDEV_EXTRA_rule_generator=y,
+            CONFIG_UDEV_EXTRA_scsi_id=y,
+            CONFIG_UDEV_EXTRA_usb_id=y,
+            CONFIG_UDEV_EXTRA_v4l_id=y,
+          ]
+        }
+      ]
+      mode: config
+- patch:
+    #used: no
+    path: /.config
+    items:
+    - name: 启用 kmod-video-core 基本
+      cfgs: [
+        CONFIG_PACKAGE_kmod-video-core=y,
+        {
+          i: CONFIG_PACKAGE_kmod-video-core,
+          c: [
+            CONFIG_PACKAGE_kmod-video-cpia2=n,
+            CONFIG_PACKAGE_kmod-video-gspca-core=n,
+            CONFIG_PACKAGE_kmod-video-gspca-conex=n,
+            CONFIG_PACKAGE_kmod-video-gspca-etoms=n,
+            CONFIG_PACKAGE_kmod-video-gspca-finepix=n,
+            CONFIG_PACKAGE_kmod-video-gspca-gl860=n,
+            CONFIG_PACKAGE_kmod-video-gspca-jeilinj=n,
+            CONFIG_PACKAGE_kmod-video-gspca-konica=n,
+            CONFIG_PACKAGE_kmod-video-gspca-m5602=n,
+            CONFIG_PACKAGE_kmod-video-gspca-mars=n,
+            CONFIG_PACKAGE_kmod-video-gspca-mr97310a=n,
+            CONFIG_PACKAGE_kmod-video-gspca-ov519=n,
+            CONFIG_PACKAGE_kmod-video-gspca-ov534=n,
+            CONFIG_PACKAGE_kmod-video-gspca-ov534-9=n,
+            CONFIG_PACKAGE_kmod-video-gspca-pac207=n,
+            CONFIG_PACKAGE_kmod-video-gspca-pac7311=n,
+            CONFIG_PACKAGE_kmod-video-gspca-se401=n,
+            CONFIG_PACKAGE_kmod-video-gspca-sn9c20x=n,
+            CONFIG_PACKAGE_kmod-video-gspca-sonixb=n,
+            CONFIG_PACKAGE_kmod-video-gspca-sonixj=n,
+            CONFIG_PACKAGE_kmod-video-gspca-spca500=n,
+            CONFIG_PACKAGE_kmod-video-gspca-spca501=n,
+            CONFIG_PACKAGE_kmod-video-gspca-spca505=n,
+            CONFIG_PACKAGE_kmod-video-gspca-spca506=n,
+            CONFIG_PACKAGE_kmod-video-gspca-spca508=n,
+            CONFIG_PACKAGE_kmod-video-gspca-spca561=n,
+            CONFIG_PACKAGE_kmod-video-gspca-sq905=n,
+            CONFIG_PACKAGE_kmod-video-gspca-sq905c=n,
+            CONFIG_PACKAGE_kmod-video-gspca-stk014=n,
+            CONFIG_PACKAGE_kmod-video-gspca-stv06xx=n,
+            CONFIG_PACKAGE_kmod-video-gspca-sunplus=n,
+            CONFIG_PACKAGE_kmod-video-gspca-t613=n,
+            CONFIG_PACKAGE_kmod-video-gspca-tv8532=n,
+            CONFIG_PACKAGE_kmod-video-gspca-vc032x=n,
+            CONFIG_PACKAGE_kmod-video-gspca-zc3xx=n,
+            CONFIG_PACKAGE_kmod-video-pwc=y,
+            CONFIG_PACKAGE_kmod-video-sn9c102=n,
+            CONFIG_PACKAGE_kmod-video-uvc=y,
+            CONFIG_PACKAGE_kmod-video-videobuf2=y,
+          ]
+        }
+      ]
+      mode: config
+- patch:
+    used: no
+    path: /.config
+    items:
+    - name: 启用 kmod-video-core 全部
+      cfgs: [
+        CONFIG_PACKAGE_kmod-video-core=y,
+        {
+          i: CONFIG_PACKAGE_kmod-video-core,
+          c: [
+            CONFIG_PACKAGE_kmod-video-cpia2=y,
+            CONFIG_PACKAGE_kmod-video-gspca-core=y,
+            CONFIG_PACKAGE_kmod-video-gspca-conex=y,
+            CONFIG_PACKAGE_kmod-video-gspca-etoms=y,
+            CONFIG_PACKAGE_kmod-video-gspca-finepix=y,
+            CONFIG_PACKAGE_kmod-video-gspca-gl860=y,
+            CONFIG_PACKAGE_kmod-video-gspca-jeilinj=y,
+            CONFIG_PACKAGE_kmod-video-gspca-konica=y,
+            CONFIG_PACKAGE_kmod-video-gspca-m5602=y,
+            CONFIG_PACKAGE_kmod-video-gspca-mars=y,
+            CONFIG_PACKAGE_kmod-video-gspca-mr97310a=y,
+            CONFIG_PACKAGE_kmod-video-gspca-ov519=y,
+            CONFIG_PACKAGE_kmod-video-gspca-ov534=y,
+            CONFIG_PACKAGE_kmod-video-gspca-ov534-9=y,
+            CONFIG_PACKAGE_kmod-video-gspca-pac207=y,
+            CONFIG_PACKAGE_kmod-video-gspca-pac7311=y,
+            CONFIG_PACKAGE_kmod-video-gspca-se401=y,
+            CONFIG_PACKAGE_kmod-video-gspca-sn9c20x=y,
+            CONFIG_PACKAGE_kmod-video-gspca-sonixb=y,
+            CONFIG_PACKAGE_kmod-video-gspca-sonixj=y,
+            CONFIG_PACKAGE_kmod-video-gspca-spca500=y,
+            CONFIG_PACKAGE_kmod-video-gspca-spca501=y,
+            CONFIG_PACKAGE_kmod-video-gspca-spca505=y,
+            CONFIG_PACKAGE_kmod-video-gspca-spca506=y,
+            CONFIG_PACKAGE_kmod-video-gspca-spca508=y,
+            CONFIG_PACKAGE_kmod-video-gspca-spca561=y,
+            CONFIG_PACKAGE_kmod-video-gspca-sq905=y,
+            CONFIG_PACKAGE_kmod-video-gspca-sq905c=y,
+            CONFIG_PACKAGE_kmod-video-gspca-stk014=y,
+            CONFIG_PACKAGE_kmod-video-gspca-stv06xx=y,
+            CONFIG_PACKAGE_kmod-video-gspca-sunplus=y,
+            CONFIG_PACKAGE_kmod-video-gspca-t613=y,
+            CONFIG_PACKAGE_kmod-video-gspca-tv8532=y,
+            CONFIG_PACKAGE_kmod-video-gspca-vc032x=y,
+            CONFIG_PACKAGE_kmod-video-gspca-zc3xx=y,
+            CONFIG_PACKAGE_kmod-video-pwc=y,
+            CONFIG_PACKAGE_kmod-video-sn9c102=y,
+            CONFIG_PACKAGE_kmod-video-uvc=y,
+            CONFIG_PACKAGE_kmod-video-videobuf2=y,
+          ]
+        }
+      ]
+      mode: config
+- patch:
+    #used: no
+    path: /.config
+    items:
+    - name: 启用 mjpg-streamer/fswebcam
+      cfgs: [
+        CONFIG_PACKAGE_libgd=y,
+        CONFIG_PACKAGE_libjpeg=y,
+        CONFIG_PACKAGE_libpng=y,
+        CONFIG_PACKAGE_libv4l=y,
+        CONFIG_PACKAGE_libwebcam=y,
+        CONFIG_PACKAGE_libxml2=y,
+        CONFIG_PACKAGE_fswebcam=y,
+        CONFIG_PACKAGE_mjpg-streamer=y,
+        {
+          i: CONFIG_PACKAGE_mjpg-streamer,
+          c: [
+            CONFIG_MJPG_STREAMER_V4L2=y,
+            CONFIG_MJPG_STREAMER_INPUT_FILE=y,
+            CONFIG_MJPG_STREAMER_INPUT_UVC=y,
+            CONFIG_MJPG_STREAMER_INPUT_TESTPICTURE=y,
+            CONFIG_MJPG_STREAMER_OUTPUT_FILE=y,
+            CONFIG_MJPG_STREAMER_OUTPUT_HTTP=y,
+            CONFIG_MJPG_STREAMER_WWW=y,
+          ]
+        },
+        CONFIG_PACKAGE_uvcdynctrl=y,
+        {
+          i: CONFIG_PACKAGE_uvcdynctrl,
+          c: [
+            CONFIG_PACKAGE_UVCDYNCTRL_UDEV_RULE=y,
+          ]
+        },
+        CONFIG_PACKAGE_v4l-utils=y,
+      ]
+      mode: config

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+if [ -f /etc/config/luci ] ; then
+  uci set luci.main.lang=zh_cn
+  uci commit luci
+  /etc/init.d/uhttpd restart
+fi
+
+echo "================>luci" >> /var/log/initlog
+
+exit 0

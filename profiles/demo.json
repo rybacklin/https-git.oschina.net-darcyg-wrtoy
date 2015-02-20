@@ -1,0 +1,11 @@
+{
+  "platform": "ramips",
+  "chip_name": "mt7620",
+  "tftp_root": "/works/openwrt/tftproot",
+  "tftp_link": "wrtbin",
+  "usb_dev": "",
+  "id": 0,
+  "profile_name": "demo",
+  "board_name": "abc",
+  "board_tag": "WRTOY"
+}

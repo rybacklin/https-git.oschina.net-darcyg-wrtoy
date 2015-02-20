@@ -1,0 +1,585 @@
+#!/bin/bash
+
+source common/common.sh common
+
+function action_upgrade_feeds()
+{
+  cd $op_dir
+  local fn
+  [ -z "$feeds_name" ] && feeds_name="all"
+  [ "$feeds_name" == "-" -o "$feeds_name" == "c" ] && feeds_name="commonpack"
+  [ "$feeds_name" == "all" ] && fn="-a" || fn="$feeds_name"
+  show i $(lang "upgrade feeds: $feeds_name" "升级feeds仓库: $feeds_name")
+  $doProxy ./scripts/feeds update "$fn"
+  $doProxy ./scripts/feeds install "$fn"
+  exit 0
+}
+
+function action_upgrade_custom_feeds()
+{
+  feeds_name="-"
+  action_upgrade_feeds
+  exit 0
+}
+
+function action_use_proxy()
+{
+  if [ $use_proxy == true ]; then
+    local has_proxy=$(netstat -apnl 2>/dev/null | grep $proxy_port)
+    [ ! -z "$has_proxy" ] && ( doProxy="proxychains"; \
+      show s $(lang "used ssh proxy($proxy_port)" "检测到ssh代理服务端口($proxy_port)")) || \
+      show s $(lang "no ssh proxy" "没有ssh代理服务")
+  fi
+  doAction=true
+}
+
+function action_verbose()
+{
+  doVerbose="V=s"
+}
+
+function action_install_new_openwrt()
+{
+  show i $(lang "install openwrt base form git" "安装openwrt基本平台")
+  cd $op_root
+  ./openwrt_synchro -f
+  exit 0
+}
+
+function action_reset_current_openwrt()
+{
+  show i $(lang "reinstall openwrt base form git" "重新安装openwrt基本平台")
+  cd $op_root
+  ./openwrt_synchro -m ch -f
+  exit 0
+}
+
+function action_install_release_openwrt()
+{
+  show i $(lang "install openwrt base form git(release version)" "重新安装openwrt基本平台(release版本)")
+  cd $op_root
+  ./openwrt_synchro -m rh -f
+  exit 0
+}
+
+function action_install_beta_openwrt()
+{
+  show i $(lang "install openwrt base form git(beta version)" "重新安装openwrt基本平台(beta版本)")
+  cd $op_root
+  ./openwrt_synchro -m bh -f
+  exit 0
+}
+
+function action_download_package()
+{
+  show i $(lang "download all package source code" "下载所选模块所有源码包")
+  cd $op_dir
+  if [ $download_proxy_package == true ]; then
+    svpn.sh
+    action_use_proxy
+  fi
+  $doProxy make download $doVerbose $doMakeJ
+  exit 0
+}
+
+function action_restart_tftp()
+{
+  show i $(lang "restart tftp server" "启动tftp服务")
+  sudo service tftpd-hpa restart
+  exit 0
+}
+
+function action_make_usb_image_disk()
+{
+  show i $(lang "restart tftp server" "启动tftp服务")
+  exit 0
+}
+
+function action_copy_usb_image_disk()
+{
+  show i $(lang "copy firmware file to usb directory" "拷贝产生的固件文件到usb目录")
+  cd $op_root
+  local bn=$(./hardware_manage -gv bn)
+  local bt=$(./hardware_manage -gv bt)
+  local pf=$(./hardware_manage -gv pf)
+  local cn=$(./hardware_manage -gv cn)
+  local tr=$(./hardware_manage -gv tr)
+  local tl=$(./hardware_manage -gv tl)
+  local bf=$(./hardware_manage -gv bf)
+  local ud=$(./hardware_manage -gv ud)
+  local src="$op_dir/bin/$pf/$bf"
+  local nbf=$(basename $bf .bin)"_"$(now).bin
+  local mnt=$(df -h | grep $ud | awk '{print $6}')
+  if [ ! -d "$mnt" ]; then
+    show s $(lang "usb directory($ud) not exists" "目标usb目录($ud)不存在")
+    exit 0
+  fi
+  local dst="$mnt/$nbf"
+  #echo $src
+  #echo $dst
+  #echo $link
+  local fsize
+  local fsizeh
+  local fdtime
+  local fhash
+  if [ -f "$src" ]; then
+    [ -f "$dst" ] && rm $dst
+    fsize=$(ls -l $src | awk '{print $5}')
+    fsizeh=$(ls -lh $src | awk '{print $5}')
+    fhash=$(md5sum -b $src | awk '{print $1}')
+    fdtime=$(stat -c %y $src | awk -F. '{print $1}')
+    show s $(lang "new file" "拷贝文件：") $dst " ($fdtime)"
+    lang " filesize: $fsize byte ($fsizeh) md5:$fhash" " 文件大小: $fsize 字节 ($fsizeh) md5:$fhash"
+    cp -f $src $dst
+    sync
+  else
+    show s $(lang "no file copy." "没有文件被复制")
+  fi
+  exit 0
+}
+
+function action_clear()
+{
+  show i $(lang "clear project" "清除项目")
+  cd $op_dir
+  if [ $clear_temp == true ]; then
+    rm -rf ./tmp
+  else
+    make clean $doVerbose $doMakeJ
+  fi
+  exit 0
+}
+
+function action_backup_config()
+{
+  show i $(lang "backup openwrt config" "备份openwrt配置")
+  [ -z "$backup_config" ] && exit 0
+  cd $op_dir
+  show s $(lang "copy .config to config.$backup_config" "拷贝 .config 为 config.$backup_config")
+  cp .config config.$backup_config
+}
+
+function action_recover_config()
+{
+  show i $(lang "recover openwrt config" "恢复openwrt配置")
+  [ -z "$recover_config" ] && exit 0
+  cd $op_dir
+  show s $(lang "copy config.$backup_config to .config" "拷贝 config.$backup_config 为 .config")
+  cp config.$recover_config .config
+}
+
+function action_build()
+{
+  show i $(lang "build openwrt" "编译openwrt")
+  cd $op_dir
+  if [ -z "$build_j" ]; then
+    $doProxy make $doVerbose $doMakeJ
+  else
+    $doProxy make -j $build_j -l9 $doVerbose
+  fi
+}
+
+function action_copy_tftp()
+{
+  show i $(lang "copy firmware file to tftp root directory" "拷贝产生的固件文件到tftp的固件目录")
+  cd $op_root
+  local bn=$(./hardware_manage -gv bn)
+  local bt=$(./hardware_manage -gv bt)
+  local pf=$(./hardware_manage -gv pf)
+  local cn=$(./hardware_manage -gv cn)
+  local tr=$(./hardware_manage -gv tr)
+  local tl=$(./hardware_manage -gv tl)
+  local bf=$(./hardware_manage -gv bf)
+  local src="$op_dir/bin/$pf/$bf"
+  local dst="$tr/$bf"
+  local link="$tr/$tl"
+  #echo $src
+  #echo $dst
+  #echo $link
+  local fsize
+  local fsizeh
+  local ofsize
+  local ofsizeh
+  local ofhash
+  local ofdtime
+  local fdtime
+  local fhash
+  if [ -L "$link" ]; then
+    ofsize=$(ls -l $tr/$(basename $(readlink $link)) | awk '{print $5}')
+    ofsizeh=$(ls -lh $tr/$(basename $(readlink $link)) | awk '{print $5}')
+    ofhash=$(md5sum -b $tr/$(basename $(readlink $link)) | awk '{print $1}')
+    ofdtime=$(stat -c %y $tr/$(basename $(readlink $link)) | awk -F. '{print $1}')
+    show s $(lang "old file" "原 文 件：") $(basename $(readlink $link)) "=>" $tl " ($ofdtime)"
+    lang " filesize: $ofsize byte ($ofsizeh) md5:$ofhash" " 文件大小: $ofsize 字节 ($ofsizeh) md5:$ofhash"
+    echo "link $tl exists! rm $tl file!"
+    rm -f $link
+  fi
+  if [ -f "$src" ]; then
+    [ -f "$dst" ] && rm $dst
+    fsize=$(ls -l $src | awk '{print $5}')
+    fsizeh=$(ls -lh $src | awk '{print $5}')
+    fhash=$(md5sum -b $src | awk '{print $1}')
+    fdtime=$(stat -c %y $src | awk -F. '{print $1}')
+    show s $(lang "new file" "生成文件：") $tl "=>" $bf " ($fdtime)"
+    lang " filesize: $fsize byte ($fsizeh) md5:$fhash" " 文件大小: $fsize 字节 ($fsizeh) md5:$fhash"
+    [ ! -z "$ofhash" -a ! -z "$fhash" -a "$ofhash" != "$fhash" ] && show s $(lang "file chanage!" "文件发生变更")
+    [ ! -z "$ofhash" -a ! -z "$fhash" -a "$ofhash" == "$fhash" ] && show s $(lang "file no chanage!" "文件一致")
+    cp -f $src $dst
+    ln -s $(basename $dst) $link
+  else
+    show s $(lang "no file copy." "没有文件被复制")
+  fi
+}
+
+function action_make_package()
+{
+  show i $(lang "make package" "编译package")
+  cd $op_dir
+  [ -z "$package_name" ] && exit 0
+  local pn="compile"
+  [ $make_package == true ] && pn="compile"
+  [ $make_package_install == true ] && pn="install"
+  [ $make_package_download == true ] && pn="download"
+  [ $make_package_clean == true ] && pn="chean"
+  [ $make_package_refresh == true ] && pn="refresh"
+  $doProxy make package/$package_name/$pn $doVerbose $doMakeJ
+  exit 0
+}
+
+function action_make_menu()
+{
+  show i $(lang "make menuconfig" "执行menuconfig(openwrt功能定制)")
+  cd $op_dir
+  make menuconfig $doVerbose
+  exit 0
+}
+
+function action_make_kernel_menu()
+{
+  show i $(lang "make kernel menuconfig" "执行kernel menuconfig(linux内核定制)")
+  cd $op_dir
+  make kernel_menuconfig $doVerbose
+  exit 0
+}
+
+function action_make_defconfig()
+{
+  show i $(lang "make defconfig" "执行Openwrt配置依赖关系梳理（清除无效配置，检测并设置依赖关系）")
+  cd $op_dir
+  make defconfig $doVerbose
+  exit 0
+}
+
+function action_make_j()
+{
+  [ ! -z "$make_j" ] && doMakeJ="" || doMakeJ="-j $make_j -l9"
+}
+
+function action_patch_openwrt()
+{
+  show i $(lang "patch project(app)" "给当前openwrt打上项目应用补丁")
+  [ -z "$proj_name" ] && exit 0
+  cd $op_root
+  local board_type=$(./hardware_manage -gv pf)
+  $doProxy ./patch_openwrt.py proj -t $board_type $proj_name -w
+}
+
+function action_patch_platform()
+{
+  show i $(lang "patch project(platform)" "给当前openwrt打上项目平台补丁")
+  cd $op_root
+  local board_type=$(./hardware_manage -gv pf)
+  local board_name=$(./hardware_manage -gv bn)
+  $doProxy ./patch_openwrt.py proj -t $board_type $board_name -w -P
+}
+
+function action_patch_host()
+{
+  show i $(lang "patch project(host)" "给当前openwrt打上项目交叉编译补丁")
+  cd $op_root
+  $doProxy ./patch_openwrt.py proj -H -w empty
+}
+
+doAction=false
+op_root=$(get_wrtoy_path)
+op_wrtoy_dir=$(get_wrtoy_path ..)
+op_hp_dir=$(get_wrtoy_path profiles)
+op_tl_dir=$(get_wrtoy_path ../tftproot)
+op_dir=$(get_wrtoy_path ../openwrt)
+doProxy=
+proxy_port=7070
+doVerbose=
+doMakeJ=
+
+#======================================================
+help_feeds=$(lang \
+  "upgrade and install feeds" \
+  "升级并安装feeds(默认为安装全部feeds)")
+
+addOption -f    --feeds \
+    action=action_upgrade_feeds dest=feeds_name \
+    help="$help_feeds"
+
+#======================================================
+help_custom_feeds=$(lang \
+  "upgrade and install custom feeds (feeds: commonpack)" \
+  "升级并安装commonpack feeds仓库")
+
+addOption -fc   --feeds-commonpack \
+    flagTrue action=action_upgrade_custom_feeds dest=feeds_custom \
+    help="$help_custom_feeds"
+
+#======================================================
+help_use_proxy=$(lang \
+  "use sock5 proxy(proxychains support)" \
+  "使用sock5代理(proxychains支持)")
+
+addOption -pc   --proxychains \
+    flagTrue action=action_use_proxy dest=use_proxy \
+    help="$help_use_proxy"
+
+#======================================================
+help_install_new_openwrt=$(lang \
+  "install new Git source from Openwrt" \
+  "从Openwrt的Git中提取最新的源")
+
+addOption -I --install-openwrt \
+    flagTrue action=action_install_new_openwrt dest=install_new_openwrt \
+    help="$help_install_new_openwrt"
+
+#======================================================
+help_reset_current_openwrt=$(lang \
+  "reset current Git source from Openwrt" \
+  "从Openwrt的Git中提取当前版本的源")
+
+addOption -R --reset-openwrt \
+    flagTrue action=action_reset_current_openwrt dest=reset_current_openwrt \
+    help="$help_reset_current_openwrt"
+
+#======================================================
+help_install_release_openwrt=$(lang \
+  "install release version Git source from Openwrt" \
+  "从Openwrt的Git中提取项目release版本的源")
+
+addOption -IR --install-release-openwrt \
+    flagTrue action=action_install_release_openwrt dest=install_release_openwrt \
+    help="$help_install_release_openwrt"
+
+#======================================================
+help_install_beta_openwrt=$(lang \
+  "install beta version Git source from Openwrt" \
+  "从Openwrt的Git中提取项目beta版本的源")
+
+addOption -IB --install-beta-openwrt \
+    flagTrue action=action_install_beta_openwrt dest=install_beta_openwrt \
+    help="$help_install_beta_openwrt"
+
+#======================================================
+help_verbose=$(lang \
+  "show verbose" \
+  "显示更详细的信息")
+
+addOption -v --verbose \
+    flagTrue action=action_verbose dest=verbose \
+    help="$help_verbose"
+
+#======================================================
+help_download=$(lang \
+  "download all package source code" \
+  "下载所有选中的package的源码")
+
+addOption -dl --download \
+    flagTrue action=action_download_package dest=download_package \
+    help="$help_download"
+
+addOption -dl+ --download-proxy \
+    flagTrue action=action_download_package dest=download_proxy_package \
+    help="$help_download"
+
+#======================================================
+help_backup_config=$(lang \
+  "backup openwrt config" \
+  "备份openwrt配置")
+
+addOption -bc --backup-config \
+    action=action_backup_config dest=backup_config \
+    help="$help_backup_config"
+
+#======================================================
+help_recover_config=$(lang \
+  "recover openwrt config" \
+  "恢复openwrt配置")
+
+addOption -rc --recover-config \
+    action=action_recover_config dest=recover_config \
+    help="$help_recover_config"
+
+#======================================================
+help_clear=$(lang \
+  "clear project" \
+  "清除项目数据")
+
+addOption -cl --clear \
+    flagTrue action=action_clear dest=clear\
+    help="$help_clear"
+
+addOption -ct --clear-temp \
+    flagTrue action=action_clear dest=clear_temp \
+    help="$help_clear"
+
+#======================================================
+help_make_usb_image_disk=$(lang \
+  "make firmware image file to usbdisk(image mode)" \
+  "将指定u盘制作成启动盘(x86/rpi)")
+
+addOption -iu   --usb \
+    flagTrue action=action_make_usb_image_disk dest=usb_image\
+    help="$help_make_usb_image_disk"
+
+#======================================================
+help_copy_usb_image_disk=$(lang \
+  "copy firmware image file to usbdisk(copy mode)" \
+  "将镜像拷贝到指定u盘")
+
+addOption -cu   --usb-copy \
+    flagTrue action=action_copy_usb_image_disk dest=usb_copy\
+    help="$help_copy_usb_image_disk"
+
+#======================================================
+help_restart_tftp=$(lang \
+  "restart tftp server" \
+  "启动tftp服务")
+
+addOption --tftp \
+    flagTrue action=action_restart_tftp dest=restart_tftp \
+    help="$help_restart_tftp"
+
+#======================================================
+help_build=$(lang \
+  "build openwrt" \
+  "编译openwrt")
+
+addOption -b   --build \
+    flagTrue dest=build_base \
+    help="$help_build"
+
+addOption -bj   --build-j \
+    dest=build_j\
+    help="$help_build"
+
+#======================================================
+help_copy=$(lang \
+  "copy firmware file to tftp root directory" \
+  "拷贝产生的固件文件到tftp的固件目录")
+
+addOption -c   --copy \
+    flagTrue dest=copy_tftp \
+    help="$help_copy"
+
+#======================================================
+help_make_package=$(lang \
+  "make package" \
+  "编译package")
+
+addOption -pn   --package-name \
+    action=action_make_package dest=package_name \
+    help="$help_make_package"
+
+addOption -mp   --make-package \
+    flagTrue dest=make_package \
+    help="$help_make_package"
+
+addOption -mpi   --make-package-install \
+    flagTrue dest=make_package_install \
+    help="$help_make_package"
+
+addOption -mpd   --make-package-download \
+    flagTrue dest=make_package_download \
+    help="$help_make_package"
+
+addOption -mpc   --make-package-clean \
+    flagTrue dest=make_package_clean \
+    help="$help_make_package"
+
+addOption -mpr   --make-package-refresh \
+    flagTrue dest=make_package_refresh \
+    help="$help_make_package"
+
+#======================================================
+help_make_j=$(lang \
+  "multi thread compiled" \
+  "执行多线程编译")
+
+addOption -j \
+    action=action_make_j dest=make_j \
+    help="$help_make_menu_j"
+
+#======================================================
+help_make_menu=$(lang \
+  "make menuconfig" \
+  "执行menuconfig(openwrt功能定制)")
+
+addOption -m   --menu-config \
+    flagTrue action=action_make_menu dest=menu_config\
+    help="$help_make_menu"
+
+#======================================================
+help_make_kernel_menuconfig=$(lang \
+  "make kernel menuconfig" \
+  "执行kernel menuconfig(linux内核定制)")
+
+addOption -km   --kernel-menu-config \
+    flagTrue action=action_make_kernel_menu dest=kernel_menu_config\
+    help="$help_make_kernel_menuconfig"
+
+#======================================================
+help_make_defconfig=$(lang \
+  "make defconfig" \
+  "执行Openwrt配置依赖关系梳理（清除无效配置，检测并设置依赖关系）")
+
+addOption -def   --default-config \
+    flagTrue action=action_make_defconfig  dest=make_defconfig\
+    help="$help_make_defconfig"
+
+#======================================================
+help_patch_openwrt=$(lang \
+  "patch project(app)" \
+  "给当前openwrt打上项目应用补丁")
+
+addOption -po   --patch-openwrt \
+    default=mtall action=action_patch_openwrt dest=proj_name \
+    help="$help_patch_openwrt"
+
+#======================================================
+help_patch_platform=$(lang \
+  "patch project(platform)" \
+  "给当前openwrt打上项目平台补丁")
+
+addOption -pp   --patch-platform \
+    flagTrue action=action_patch_platform dest=patch_platform\
+    help="$help_patch_platform"
+
+#======================================================
+help_patch_host=$(lang \
+  "patch project(host)" \
+  "给当前openwrt打上项目交叉编译平台补丁")
+
+addOption -ph   --patch-host \
+    flagTrue action=action_patch_host dest=patch_host\
+    help="$help_patch_host"
+
+#addOption -P --platform \
+#    action=action_reset_last_openwrt \
+#    help="set platform"
+
+parseOptions "$@"
+
+#action_run $profile $debug
+function action_run()
+{
+  [ $build_base == true ] && action_build
+  [ $build_j ] && action_build
+  [ $copy_tftp == true ] && action_copy_tftp
+}
+
+action_run

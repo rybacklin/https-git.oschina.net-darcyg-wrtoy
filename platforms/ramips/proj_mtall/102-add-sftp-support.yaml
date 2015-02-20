@@ -1,0 +1,19 @@
+--- # 默认.config调整
+patch:
+  path: /.config
+  items:
+  - name: 配置openssh-sftp-server
+    cfgs: [
+      CONFIG_PACKAGE_openssh-sftp-server=y,
+    ]
+    mode: config
+  - name: 配置openssh-sftp-client
+    cfgs: [
+      CONFIG_PACKAGE_openssh-sftp-client=y,
+    ]
+    mode: config
+  - name: 配置vsftp
+    cfgs: [
+      CONFIG_PACKAGE_vsftp=y,
+    ]
+    mode: skip,#config

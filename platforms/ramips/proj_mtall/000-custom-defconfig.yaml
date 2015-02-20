@@ -1,0 +1,68 @@
+--- # 默认.config调整
+patch:
+  path: /.config
+  items:
+  - name: 配置BOOT模式
+    cfgs: [
+      CONFIG_PACKAGE_shadow-common=y,
+      CONFIG_PACKAGE_shadow-su=y,
+      CONFIG_PACKAGE_bc=y,
+    ]
+    mode: config
+  - name: 配置控制台登录密码模式
+    cfgs: [
+      CONFIG_BUSYBOX_CONFIG_LOGIN=y,
+      CONFIG_BUSYBOX_CONFIG_CRYPTPW=y,
+      CONFIG_BUSYBOX_CONFIG_CHPASSWD=y,
+      {
+        i: CONFIG_BUSYBOX_CONFIG_LOGIN,
+        c: [
+          CONFIG_BUSYBOX_CONFIG_LOGIN_SESSION_AS_CHILD=n,
+          CONFIG_BUSYBOX_CONFIG_PAM=n,
+          CONFIG_BUSYBOX_CONFIG_LOGIN_SCRIPTS=n,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_NOLOGIN=n,
+          CONFIG_BUSYBOX_CONFIG_FEATURE_SECURETTY=n,
+        ]
+      }
+    ]
+    mode: skip,#config
+  - name: 换ip（网关）
+    cfgs: [
+      CONFIG_TARGET_PREINIT_IP="192.168.79.5",
+    ]
+    mode: skip,#config
+  - name: 换掩码地址
+    cfgs: [
+      CONFIG_TARGET_PREINIT_NETMASK="255.255.255.0",
+    ]
+    mode: skip,#config
+  - name: 换广播地址
+    cfgs: [
+      CONFIG_TARGET_PREINIT_BROADCAST="192.168.79.255",
+    ]
+    mode: skip,#config
+  - name: libusb库
+    cfgs: [
+      CONFIG_PACKAGE_libusb-1.0=y,
+      CONFIG_PACKAGE_libusb-compat=y,
+    ]
+    mode: config
+  - name: 配置版本信息
+    cfgs: [
+      CONFIG_IMAGEOPT=y,
+      CONFIG_VERSIONOPT=y,
+      {
+        i: CONFIG_VERSIONOPT,
+        c: [
+          CONFIG_VERSION_DIST="MTALL",
+          CONFIG_VERSION_NICK="mtall",
+          CONFIG_VERSION_NUMBER="seatry",
+          'CONFIG_VERSION_REPO="http://downs.seatry.com/mtall/trunk/%T/packages"',
+          CONFIG_VERSION_MANUFACTURER="",
+          CONFIG_VERSION_PRODUCT="",
+          CONFIG_VERSION_HWREV="v1.1",
+          CONFIG_VERSION_FILENAMES=n,
+        ]
+      }
+    ]
+    mode: config

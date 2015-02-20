@@ -1,0 +1,15 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+if [ ! -e /usr/libexec/sftp-server ] ; then
+  [ ! -d /usr/libexec ] && mkdir -p /usr/libexec
+  cd /usr/libexec
+  [ -f /usr/lib/sftp-server ] && ln -s ../lib/sftp-server ./sftp-server
+fi
+
+echo "================>sftp" >> /var/log/initlog
+
+exit 0

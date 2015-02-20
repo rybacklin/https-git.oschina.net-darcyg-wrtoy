@@ -1,0 +1,144 @@
+#!/bin/bash
+
+source common/common.sh common
+
+function action_copy_to_host()
+{
+  show i $(lang "copy firmware file to host directory" "拷贝产生的固件文件到host目录")
+  cd $op_root
+  local git_commit=$(git log -1 --format="%H")
+  local git_date=$(git log -1 --format="%ad" --date=iso)
+  local bn=$(./hardware_manage -gv bn)
+  local bt=$(./hardware_manage -gv bt)
+  local pf=$(./hardware_manage -gv pf)
+  local cn=$(./hardware_manage -gv cn)
+  local tr=$(./hardware_manage -gv tr)
+  local tl=$(./hardware_manage -gv tl)
+  local bf=$(./hardware_manage -gv bf)
+  local hs="ssh:${host_name}"
+  local src="$op_dir/bin/$pf/$bf"
+  local now=$(now)
+  local nbf="${bn}_${pf}_${cn}_${now}.bin"
+  local dst="$tr/$nbf"
+  #echo $src
+  #echo $dst
+  #echo $link
+  local fsize
+  local fsizeh
+  local fdtime
+  local fhash
+  local subpath
+  [ $is_beta == true ] && subpath=beta
+  [ $is_release == true ] && subpath=release
+  [ -z "$subpath" ] && subpath=alpha
+  if [ -z "$password" ]; then
+    local section="site_date"
+    local sshini="wrtdev"_"$username"
+    password=$(get_sproj_ini "$sshini" "$section")
+  fi
+  if [ -f "$src" ]; then
+    [ -f "$dst" ] && rm $dst
+    fsize=$(ls -l $src | awk '{print $5}')
+    fsizeh=$(ls -lh $src | awk '{print $5}')
+    fhash=$(md5sum -b $src | awk '{print $1}')
+    fdtime=$(stat -c %y $src | awk -F. '{print $1}')
+    show s $(lang "new file" "拷贝文件：") $dst " ($fdtime)"
+    lang " filesize: $fsize byte ($fsizeh) md5:$fhash" " 文件大小: $fsize 字节 ($fsizeh) md5:$fhash"
+    [ -L "$dst" ] && rm $dst
+    echo $dst
+    ln -s $src $dst
+    local dsthp=$op_tl_dir/$(basename $nbf .bin).json
+    #cp $(get_profile_path) $dsthp
+    [ $is_test == true ] && echo "$host_name" "$username" "$dst|$dsthp" "firmwares/$subpath/$pf"
+    [ -f "$info" ] && info=$(cat $info)
+    [ $is_test == true ] && echo "$info"
+    local opt=".time=\"$now\" | .git_commit=\"$git_commit\" | .git_date=\"$git_date\" | .info=\"$info\""
+    [ $is_test == true ] && jq "$opt"  $(get_profile_path) || jq "$opt"  $(get_profile_path) > $dsthp
+    [ $is_test == true ] || expect_scps "$host_name" "$username" "$password" "$dst|$dsthp" "~/firmwares/$subpath/$pf"
+    [ -L "$dst" ] && rm $dst
+    [ -f "$dsthp" ] && rm $dsthp
+  else
+    show s $(lang "no file copy." "没有文件被复制")
+  fi
+  exit 0
+}
+
+doAction=false
+op_root=$(get_wrtoy_path)
+op_wrtoy_dir=$(get_wrtoy_path ..)
+op_hp_dir=$(get_wrtoy_path profiles)
+op_tl_dir=$(get_wrtoy_path ../tftproot)
+op_dir=$(get_wrtoy_path ../openwrt)
+
+#======================================================
+help_host=$(lang \
+  "upload to host" \
+  "上传主机")
+
+addOption -H    --host \
+    default="localhost" dest=host_name \
+    help="$help_host"
+
+#======================================================
+help_user=$(lang \
+  "username" \
+  "用户名")
+
+addOption -u    --username \
+    default="darcy" dest=username \
+    help="$help_user"
+
+#======================================================
+help_pass=$(lang \
+  "password" \
+  "用户密码")
+
+addOption -p    --pwssword \
+    default="" dest=password \
+    help="$help_pass"
+
+#======================================================
+help_beta=$(lang \
+  "is beta" \
+  "beta版")
+
+addOption -b    --beta \
+    flagTrue dest=is_beta \
+    help="$help_beta"
+
+#======================================================
+help_release=$(lang \
+  "is release" \
+  "release版")
+
+addOption -r    --release \
+    flagTrue dest=is_release \
+    help="$help_release"
+
+#======================================================
+help_info=$(lang \
+  "commit info" \
+  "提交版本信息")
+
+addOption -i    --info \
+    default="" dest=info \
+    help="$help_info"
+
+#======================================================
+help_test=$(lang \
+  "test info" \
+  "测试生成")
+
+addOption -t    --test \
+    flagTrue dest=is_test \
+    help="$help_test"
+
+parseOptions "$@"
+
+#action_run $profile $debug
+function action_run()
+{
+  action_copy_to_host
+}
+
+action_run

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+if [ -f /etc/config/mjpg-streamer ] ; then
+  uci set mjpg-streamer.core.enabled=1
+  uci set mjpg-streamer.core.input='uvc'
+  uci set mjpg-streamer.core.output='http'
+  uci set mjpg-streamer.core.device='/dev/video0'
+  uci set mjpg-streamer.core.fps=15
+  uci set mjpg-streamer.core.led='auto'
+  uci set mjpg-streamer.core.resolution='640x480'
+  uci set mjpg-streamer.core.www='/www/webcam'
+  uci set mjpg-streamer.core.port='8081'
+  uci set mjpg-streamer.core.username='openwrt'
+  uci set mjpg-streamer.core.password='openwrt'
+
+  uci commit mjp-streamer
+fi
+
+echo "================>streamer" >> /var/log/initlog
+
+exit 0

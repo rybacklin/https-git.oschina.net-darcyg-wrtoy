@@ -1,0 +1,70 @@
+--- # 应用 2G/3G/4G Module
+patchs:
+- patch:
+    #used: no
+    path: /.config
+    items:
+    - name: 启用 2G/3G/4G Module
+      cfgs: [
+        CONFIG_PACKAGE_kmod-mii=y,
+        CONFIG_DEFAULT_comgt=y,
+
+        {
+          i: CONFIG_DEFAULT_kmod-leds-gpio,
+          c: [
+            CONFIG_DEFAULT_kmod-ledtrig-netdev=y,
+            CONFIG_DEFAULT_kmod-ledtrig-timer=y,
+          ]
+        },
+        CONFIG_PACKAGE_kmod-usb-net=y,
+        {
+          i: CONFIG_PACKAGE_kmod-usb-net,
+          c: [
+            CONFIG_PACKAGE_kmod-usb-net-asix=n,
+            CONFIG_PACKAGE_kmod-usb-net-cdc-eem=y,
+            CONFIG_PACKAGE_kmod-usb-net-cdc-ether=y,
+            CONFIG_PACKAGE_kmod-usb-net-cdc-mbim=y,
+            CONFIG_PACKAGE_kmod-usb-net-cdc-ncm=y,
+            CONFIG_PACKAGE_kmod-usb-net-cdc-subset=y,
+            CONFIG_PACKAGE_kmod-usb-net-dm9601-ether=n,
+            CONFIG_PACKAGE_kmod-usb-net-hso=y,
+            CONFIG_PACKAGE_kmod-usb-net-huawei-cdc-ncm=y,
+            CONFIG_PACKAGE_kmod-usb-net-ipheth=y,
+            CONFIG_PACKAGE_kmod-usb-net-kalmia=y,
+            CONFIG_PACKAGE_kmod-usb-net-kaweth=y,
+            CONFIG_PACKAGE_kmod-usb-net-mcs7830=n,
+            CONFIG_PACKAGE_kmod-usb-net-pegasus=n,
+            CONFIG_PACKAGE_kmod-usb-net-qmi-wwan=y,
+            CONFIG_PACKAGE_kmod-usb-net-rndis=n,
+            CONFIG_PACKAGE_kmod-usb-net-sierrawireless=y,
+            CONFIG_PACKAGE_kmod-usb-net-smsc95xx=n,
+          ]
+        },
+        CONFIG_DEFAULT_kmod-usb-acm=y,
+        CONFIG_PACKAGE_kmod-usb-wdm=y,
+        CONFIG_PACKAGE_libattr=y,
+        CONFIG_PACKAGE_glib2=y,
+        CONFIG_PACKAGE_libffi=y,
+        CONFIG_PACKAGE_libptmalloc3=n,
+        {
+          i: CONFIG_PACKAGE_libptmalloc3,
+          c: [
+            CONFIG_PACKAGE_libqmi=y,
+          ]
+        },
+        CONFIG_PACKAGE_luci-proto-3g=y,
+        CONFIG_PACKAGE_chat=y,
+        CONFIG_PACKAGE_umbim=y,
+        CONFIG_PACKAGE_uqmi=y,
+        #CONFIG_PACKAGE_comgt=y,
+        CONFIG_DEFAULT_kmod-usb-serial=y,
+        CONFIG_DEFAULT_kmod-usb-serial-option=y,
+        {
+          i: CONFIG_DEFAULT_uci,
+          c: [
+            CONFIG_DEFAULT_usb-modeswitch=y,
+            CONFIG_DEFAULT_usb-modeswitch-data=y,
+          ]
+        }
+      ]
+      mode: config

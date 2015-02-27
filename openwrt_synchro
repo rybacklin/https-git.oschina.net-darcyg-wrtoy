@@ -4,7 +4,7 @@ source common/common.sh common
 
 function check_wrtoy_sys_paths()
 {
-  local rootdir=$(get_wrtoy_path ..)
+  local rootdir=$op_wrtoy_dir
   if [ ! -d $rootdir ]; then
     chk_mkdir $rootdir
   fi
@@ -21,7 +21,7 @@ function check_wrtoy_sys_paths()
 
 function upgrade_wrtoy_git_project()
 {
-  local rootdir=$(get_wrtoy_path ..)
+  local rootdir=$op_wrtoy_dir
   local project=$1
   local giturl=$2
 
@@ -52,7 +52,7 @@ function upgrade_wrtoy_git_project()
 
 function export_wrtoyg_git_project()
 {
-  local rootdir=$(get_wrtoy_path ..)
+  local rootdir=$op_wrtoy_dir
   local project=$1
   local githash=$2
   local ppath
@@ -214,7 +214,6 @@ function clear_feeds_conf()
 
 function action_feeds_upgrade()
 {
-  local op_dir=$(get_wrtoy_path ../openwrt)
   cd $op_dir
   ./scripts/feeds update -a
   ./scripts/feeds install -a
@@ -249,6 +248,7 @@ op_root=$(get_wrtoy_path)
 op_wrtoy_dir=$(get_wrtoy_path ..)
 op_hp_dir=$(get_wrtoy_path profiles)
 op_tl_dir=$(get_wrtoy_path ../tftproot)
+op_dir=$(get_wrtoy_path ../openwrt)
 
 #======================================================
 help_mode=$(lang \

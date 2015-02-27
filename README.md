@@ -1,15 +1,21 @@
-# openwrt-script
+# wrtoy(wrtoy构建玩具)
 
-最后更新2014.07.08
+最后更新2015.02.28
+#### 写在前面的话
+非常郁闷，因为联想笔记本电脑linux驱动的问题，这个Readme写了5次，每次写了两三百字就死机，也不保存写过的信息。
+实在没有心情更新帮助了。
+
+因为原有的构建脚本被废弃了，这里简单说说使用方法
 
 ## 安装openwrt编译环境
 
 ```bash
 mkdir -p /works/openwrt
 cd /works/openwrt
-git clone https://git.oschina.net/darcyg/wrtoy
+git clone http://git.oschina.net/darcyg/wrtoy
 cd wrtoy
 ```
+
 -------------------------------
 安装所有编译openwrt所需各种程序库执行脚本后会有提示。如果需要编译全部packages的库，请选`y`代表安装全部工具和依赖程序库，否则选`n`只安装一般必备工具和程序库。
 
@@ -19,11 +25,67 @@ cd wrtoy
 
 *** 桌面版本建议手工安装Beyond Compare 3.x For Linux的源码比较工具 ***
 
+开启中文信息模式
+
+```bash
+echo 1 > .zh_cn
+./build -h
+```
+
 同步openwrt源码到本地,建立工作目录树
 
 ```bash
-./install_openwrt.sh
+./build -I
 ```
+
+打mtall开发板的目标平台补丁到openwrt
+
+```bash
+./build -pp mtall
+```
+
+打mtall项目的应用补丁到openwrt
+
+```bash
+./build -po mtall
+```
+
+升级openwrt，仓库feed包
+
+```bash
+./build -f
+```
+
+执行make menuconfig
+
+```bash
+./build -m
+```
+
+开启tftp服务，并编译固件，拷贝固件到tftp目录
+
+```bash
+./build --tftp
+./build -bj 8 -c
+```
+
+本项目构建四个基本程序
+
+- build
+    
+    构建常用操作
+
+- openwrt_synchro
+
+    从源同步数据到本地（build会自动处理）
+
+- hardware_manage
+
+    硬件方案的配置工具
+   
+- publish
+
+    固件提交到统一服务器(通过scp传数据)
 
 --------------------------------
 
@@ -51,6 +113,8 @@ cd wrtoy
         + openwrt-script    # 本脚本工具库
         
 -------------------------------
+
+# 以下说明废弃掉
 
 ## openwrt-script 脚本库功能
 

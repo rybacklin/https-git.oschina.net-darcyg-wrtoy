@@ -4,6 +4,7 @@ patchs:
     path: /.config
     #path: [
     #  /target/linux/ramips/mt7620/config-3.14,
+    #  /target/linux/ramips/mt7620/config-3.18,
     #  /target/linux/ramips/mt7620/config-default,
     #]
     items:
@@ -256,6 +257,7 @@ patchs:
     #path: /.config
     path: [
       /target/linux/ramips/mt7620/config-3.14,
+      /target/linux/ramips/mt7620/config-3.18,
       /target/linux/ramips/mt7620/config-default,
     ]
     items:

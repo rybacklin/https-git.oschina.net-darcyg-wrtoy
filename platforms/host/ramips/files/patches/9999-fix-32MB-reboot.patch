@@ -1,0 +1,120 @@
+--- a/arch/mips/ralink/reset.c	2015-01-17 11:27:36.346525927 +0800
++++ b/arch/mips/ralink/reset.c	2015-01-25 11:39:32.000000000 +0800
+@@ -84,8 +84,16 @@ void ralink_rst_init(void)
+ 		reset_controller_register(&reset_dev);
+ }
+ 
++// manfeel, defined in m25p80.c
++extern int reset_spi_flash(void);
++
+ static void ralink_restart(char *command)
+ {
++	// manfeel, call reset spi flash in m25p80.c
++	reset_spi_flash();
++	// add some delay(50us should be ok)
++	udelay(50);
++	
+ 	if (IS_ENABLED(CONFIG_PCI)) {
+ 		rt_sysc_m32(0, RSTCTL_RESET_PCI, SYSC_REG_RESET_CTRL);
+ 		mdelay(50);
+@@ -93,6 +101,7 @@ static void ralink_restart(char *command
+ 
+ 	local_irq_disable();
+ 	rt_sysc_w32(RSTCTL_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
++	
+ 	unreachable();
+ }
+ 
+--- a/drivers/mtd/devices/m25p80.c	2015-01-17 11:27:35.174525936 +0800
++++ b/drivers/mtd/devices/m25p80.c	2015-01-25 11:39:24.000000000 +0800
+@@ -96,6 +96,7 @@
+ #define PREFER_SMALL_SECTOR_ERASE 0
+ #endif
+ 
++
+ /****************************************************************************/
+ 
+ enum read_type {
+@@ -122,7 +123,10 @@ static inline struct m25p *mtd_to_m25p(s
+ {
+ 	return container_of(mtd, struct m25p, mtd);
+ }
+-
++ 
++// manfeel, global m25p flash pointer
++struct m25p *g_flash;
++  
+ /****************************************************************************/
+ 
+ /*
+@@ -204,6 +208,7 @@ static inline int write_disable(struct m
+ 	return spi_write_then_read(flash->spi, &code, 1, NULL, 0);
+ }
+ 
++
+ /*
+  * Enable/disable 4-byte addressing mode.
+  */
+@@ -506,11 +511,15 @@ static inline unsigned int m25p80_rx_nbi
+ 	}
+ }
+ 
++
++
++
++
+ /*
+  * Read an address range from the flash chip.  The address range
+  * may be any size provided it is within the physical boundaries.
+  */
+-static int m25p80_read(struct mtd_info *mtd, loff_t from, size_t len,
++ static int m25p80_read(struct mtd_info *mtd, loff_t from, size_t len,
+ 	size_t *retlen, u_char *buf)
+ {
+ 	struct m25p *flash = mtd_to_m25p(mtd);
+@@ -1230,6 +1239,9 @@ static int m25p_probe(struct spi_device
+ 	if (!flash->command)
+ 		return -ENOMEM;
+ 
++	// manfeel, save to global flash pointer
++	g_flash = flash;
++	
+ 	flash->spi = spi;
+ 	mutex_init(&flash->lock);
+ 	spi_set_drvdata(spi, flash);
+@@ -1401,6 +1413,7 @@ static int m25p_remove(struct spi_device
+ {
+ 	struct m25p	*flash = spi_get_drvdata(spi);
+ 
++	//pr_info("manfeel m25p_remove!\n");
+ 	/* Clean up MTD stuff. */
+ 	return mtd_device_unregister(&flash->mtd);
+ }
+@@ -1421,6 +1434,27 @@ static struct spi_driver m25p80_driver =
+ 	 */
+ };
+ 
++// manfeel, call stub to reset.c
++int reset_spi_flash(void)
++{
++	//pr_info("manfeel, in %s, %p\n",__func__, (void*)g_flash);
++	struct m25p *flash = g_flash;
++	// manfeel, enable reset operation
++	flash->command[0] = 0x66;
++	int status = spi_write(flash->spi, flash->command, 1);
++	//pr_info("status = %x\n",status);
++	// manfeel, do reset operation
++	flash->command[0] = 0x99;
++	status = spi_write(flash->spi, flash->command, 1);
++	//pr_info("status = %x\n",status);
++	
++	return status;
++}
++
++EXPORT_SYMBOL_GPL(reset_spi_flash);
++
++
++
+ module_spi_driver(m25p80_driver);
+ 
+ MODULE_LICENSE("GPL");

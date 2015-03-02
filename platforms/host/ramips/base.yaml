@@ -74,6 +74,7 @@ patchs:
     #path: /.config
     path: [
       /target/linux/ramips/mt7620/config-3.14,
+      /target/linux/ramips/mt7620/config-3.18,
       /target/linux/ramips/mt7620/config-default,
     ]
     items:
@@ -91,8 +92,12 @@ patchs:
       base: /target/linux/ramips/
       orig: [
         {
-          src: patches/9999-reg-shutdown-fix-32MB-reboot.patch,
+          src: patches/9999-reg-shutdown-fix-32MB-reboot.3.14.patch,
           dst: patches-3.14/9999-fix-32MB-reboot-by-Manfeel.patch
+        },
+        {
+          src: patches/9999-reg-shutdown-fix-32MB-reboot.3.18.patch,
+          dst: patches-3.18/9999-fix-32MB-reboot-by-Manfeel.patch
         },
       ]
       mode: copy,#debug
@@ -105,6 +110,10 @@ patchs:
         {
           src: patches/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection.patch,
           dst: patches-3.14/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection-by-Manfeel.patch
+        },
+        {
+          src: patches/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection.patch,
+          dst: patches-3.18/9002-SD-sdhci-mt7620-gpio-disable-MMC-WriteProtection-by-Manfeel.patch
         },
       ]
       mode: copy,#debug

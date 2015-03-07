@@ -88,11 +88,11 @@ function load_hard_profile()
 
 function copy_config_var()
 {
-  [ "$usb_dev" == "def" ] && usb_dev=" "
-  [ "$release_hash" == "def" ] && release_hash=" "
-  [ "$beta_hash" == "def" ] && beta_hash=" "
-  [ "$current_hash" == "def" ] && current_hash=" "
-  [ "$bin_file" == "def" ] && bin_file=" "
+  [ "$usb_dev" == "def" ] && usb_dev="-"
+  [ "$release_hash" == "def" ] && release_hash="-"
+  [ "$beta_hash" == "def" ] && beta_hash="-"
+  [ "$current_hash" == "def" ] && current_hash="-"
+  [ "$bin_file" == "def" ] && bin_file="-"
   [ ! -z "$op_hp" -a "$hard_profile" == ".hardware" -a "$op_hp" != ".hardware" ] && hard_profile=$op_hp
   [ ! -z "$op_bn" -a -z "$board_name" ] && board_name=$op_bn
   [ ! -z "$op_bt" -a -z "$board_tag" ] && board_tag=$op_bt
@@ -100,11 +100,11 @@ function copy_config_var()
   [ ! -z "$op_cn" -a -z "$chip_name" ] && chip_name=$op_cn
   [ ! -z "$op_tr" -a -z "$tftp_root" ] && tftp_root=$op_tr
   [ ! -z "$op_tl" -a -z "$tftp_link" ] && tftp_link=$op_tl
-  [ ! -z "$op_bf" -a -z "$bin_file" ] && bin_file=$op_bf
-  [ ! -z "$op_ud" -a -z "$usb_dev" ] && usb_dev=$op_ud
-  [ ! -z "$op_rh" -a -z "$release_hash" ] && release_hash=$op_rh
-  [ ! -z "$op_bh" -a -z "$beta_hash" ] && beta_hash=$op_bh
-  [ ! -z "$op_bh" -a -z "$current_hash" ] && current_hash=$op_ch
+  [ ! -z "$op_bf" -a -z "$bin_file" -o "$bin_file" == "-" ] && bin_file=$op_bf
+  [ ! -z "$op_ud" -a -z "$usb_dev" -o "$usb_dev" == "-" ] && usb_dev=$op_ud
+  [ ! -z "$op_rh" -a -z "$release_hash" -o "$release_hash" == "-" ] && release_hash=$op_rh
+  [ ! -z "$op_bh" -a -z "$beta_hash" -o "$beta_hash" == "-" ] && beta_hash=$op_bh
+  [ ! -z "$op_bh" -a -z "$current_hash" -o "$current_hash" == "-" ] && current_hash=$op_ch
 }
 
 function save_hard_profile()
@@ -376,13 +376,14 @@ function action_get_cfg_var()
     "$get_variable" == "bin_file" -o \
     "$get_variable" == "all" ]; then
     local bf=$(show_cfg_var "$op_bf")
-    if [ ! -z "$bf" ]; then
+    if [ ! -z "$bf" -a "$bf" != "-" ]; then
       echo "$bf"
     else
       if [ "$op_pf" == "ramips" ]; then
         show_cfg_var "openwrt-$op_pf-$op_cn-$op_bn-squashfs-sysupgrade.bin" "bin_file"
       elif [ "$op_pf" == "x86" ]; then
-        show_cfg_var "openwrt-$op_pf-$op_bn-combined-ext4.img" "bin_file"
+        #show_cfg_var "openwrt-$op_pf-$op_bn-combined-ext4.img" "bin_file"
+        show_cfg_var "openwrt-$op_pf-$op_bn-combined-squashfs.img" "bin_file"
       elif [ "$op_pf" == "rpi" ]; then
         show_cfg_var "openwrt-brcm2708-sdcard-vfat-ext4.img" "bin_file"
       fi
@@ -468,7 +469,7 @@ help_usb_dev=$(lang \
   "设置usb设备文件路径")
 
 addOption -ud   --usb-dev \
-  default=def dest=usb_dev \
+  default=- dest=usb_dev \
   help="$help_usb_dev"
 
 #======================================================
@@ -477,7 +478,7 @@ help_release_hash=$(lang \
   "设置openwrt发布版构建hash")
 
 addOption -rh   --release-hash \
-  default=def dest=release_hash \
+  default=- dest=release_hash \
   help="$help_release_hash"
 
 #======================================================
@@ -486,7 +487,7 @@ help_beta_hash=$(lang \
   "设置openwrt测试版构建hash")
 
 addOption -bh   --beta-hash \
-  default=def dest=beta_hash \
+  default=- dest=beta_hash \
   help="$help_beta_hash"
 
 #======================================================
@@ -495,7 +496,7 @@ help_current_hash=$(lang \
   "设置openwrt当前/工作版本构建hash")
 
 addOption -ch   --current-hash \
-  default=def dest=current_hash \
+  default=- dest=current_hash \
   help="$help_current_hash"
 
 #======================================================
@@ -504,7 +505,7 @@ help_bin_file=$(lang \
   "设置向tftp复制的openwrt生成的镜像文件")
 
 addOption -bf   --bin-file \
-  default=def dest=bin_file \
+  default=- dest=bin_file \
   help="$help_bin_file"
 
 #======================================================

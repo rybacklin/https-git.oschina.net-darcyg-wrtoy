@@ -91,7 +91,44 @@ function action_restart_tftp()
 
 function action_make_usb_image_disk()
 {
-  show i $(lang "restart tftp server" "启动tftp服务")
+  show i $(lang "copy firmware file to usb driver" "拷贝产生的固件文件到usb盘")
+  cd $op_root
+  local bn=$(./hardware_manage -gv bn)
+  local bt=$(./hardware_manage -gv bt)
+  local pf=$(./hardware_manage -gv pf)
+  local cn=$(./hardware_manage -gv cn)
+  local tr=$(./hardware_manage -gv tr)
+  local tl=$(./hardware_manage -gv tl)
+  local bf=$(./hardware_manage -gv bf)
+  local ud=$(./hardware_manage -gv ud)
+  local mnt=$ud
+  local src="$op_dir/bin/$pf/$bf"
+  #local nbf=$(basename $bf .bin)"_"$(now).bin
+  #local mnt=$(df -h | grep $ud | awk '{print $6}')
+  if [ ! -d "$ud" ]; then
+    show s $(lang "usb disk($ud) not exists" "目标usb盘($ud)不存在")
+    exit 0
+  fi
+  #local dst="$mnt/$nbf"
+  #echo $src
+  #echo $dst
+  #echo $link
+  local fsize
+  local fsizeh
+  local fdtime
+  local fhash
+  if [ -f "$src" ]; then
+    [ -f "$dst" ] && rm $dst
+    fsize=$(ls -l $src | awk '{print $5}')
+    fsizeh=$(ls -lh $src | awk '{print $5}')
+    fhash=$(md5sum -b $src | awk '{print $1}')
+    show s $(lang "new file" "拷贝文件：") $ud
+    lang " filesize: $fsize byte ($fsizeh) md5:$fhash" " 文件大小: $fsize 字节 ($fsizeh) md5:$fhash"
+    sudo dd if=$src of=$ud conv=sync
+    #sync
+  else
+    show s $(lang "no file copy." "没有文件被复制")
+  fi
   exit 0
 }
 
@@ -168,13 +205,34 @@ function action_recover_config()
   cp config.$recover_config .config
 }
 
+function action_show_diff_config()
+{
+  show i $(lang "show openwrt config diff" "显示openwrt配置差异")
+  cd $op_dir
+  local difftool=$(which bcompare)
+  local prefix="config."
+  local pp1=".config"
+  local pp2=".config"
+  local ppmode="-rupN"
+  [ ! -f "$difftool" -o "$pmode" != "-" ] && difftool=diff
+  #[ -z "$pmode" -o "$pmode" == "--" ] || prefix=""
+  [ -z "$pmode" -o "$pmode" == "-" -o "$pmode" == "--" ] || ppmode=$pmode
+  [ -z "$p1" -o "$p1" == "-" ] || pp1=$prefix$p1
+  [ -z "$p2" -o "$p2" == "-" ] || pp2=$prefix$p2
+  #[ "$difftool" == "diff" ] || ppmode="&"
+  echo "command: $difftool $pp1 $pp2 $ppmode"
+  $difftool $pp1 $pp2 $ppmode
+}
+
 function action_build()
 {
   show i $(lang "build openwrt" "编译openwrt")
   cd $op_dir
   if [ -z "$build_j" ]; then
+    make defconfig
     $doProxy make $doVerbose $doMakeJ
   else
+    make defconfig
     $doProxy make -j $build_j -l9 $doVerbose
   fi
 }
@@ -204,6 +262,7 @@ function action_copy_tftp()
   local ofdtime
   local fdtime
   local fhash
+  #exit 0
   if [ -L "$link" ]; then
     ofsize=$(ls -l $tr/$(basename $(readlink $link)) | awk '{print $5}')
     ofsizeh=$(ls -lh $tr/$(basename $(readlink $link)) | awk '{print $5}')
@@ -389,11 +448,11 @@ help_download=$(lang \
   "下载所有选中的package的源码")
 
 addOption -dl --download \
-    flagTrue action=action_download_package dest=download_package \
+    flagTrue dest=download_package \
     help="$help_download"
 
 addOption -dl+ --download-proxy \
-    flagTrue action=action_download_package dest=download_proxy_package \
+    flagTrue dest=download_proxy_package \
     help="$help_download"
 
 #======================================================
@@ -413,6 +472,42 @@ help_recover_config=$(lang \
 addOption -rc --recover-config \
     action=action_recover_config dest=recover_config \
     help="$help_recover_config"
+
+#======================================================
+help_show_diff_config=$(lang \
+  "show diff openwrt config" \
+  "显示openwrt配置差异")
+
+addOption -dc --diff-config \
+    flagTrue dest=diff_config \
+    help="$help_show_diff_config"
+
+#======================================================
+help_show_diff_config_mode=$(lang \
+  "show diff openwrt config mode" \
+  "显示openwrt配置差异模式")
+
+addOption -pm --patch-mode \
+    default="-" dest=pmode \
+    help="$help_show_diff_config_mode"
+
+#======================================================
+help_show_diff_config_p1=$(lang \
+  "show diff openwrt config file1" \
+  "openwrt配置文件1")
+
+addOption -p1 --patch-file1 \
+    default="-" dest=p1 \
+    help="$help_show_diff_config_p1"
+
+#======================================================
+help_show_diff_config_p2=$(lang \
+  "show diff openwrt config file2" \
+  "openwrt配置文件2")
+
+addOption -p2 --patch-file2 \
+    default="-" dest=p2 \
+    help="$help_show_diff_config_p2"
 
 #======================================================
 help_clear=$(lang \
@@ -482,7 +577,7 @@ help_make_package=$(lang \
   "编译package")
 
 addOption -pn   --package-name \
-    action=action_make_package dest=package_name \
+    dest=package_name \
     help="$help_make_package"
 
 addOption -mp   --make-package \
@@ -577,9 +672,16 @@ parseOptions "$@"
 #action_run $profile $debug
 function action_run()
 {
+  [ $diff_config == true ] && action_show_diff_config
+  [ $download_package == true -o download_proxy_package == true ] && action_download_package
   [ $build_base == true ] && action_build
   [ $build_j ] && action_build
   [ $copy_tftp == true ] && action_copy_tftp
+  [ $make_package == true -o \
+    $make_package_install == true -o \
+    $make_package_download == true -o \
+    $make_package_clean == true -o \
+    $make_package_refresh == true  ] && action_make_package
 }
 
 action_run

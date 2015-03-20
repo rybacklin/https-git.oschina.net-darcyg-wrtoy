@@ -11,7 +11,8 @@ function action_upgrade_feeds()
   [ "$feeds_name" == "all" ] && fn="-a" || fn="$feeds_name"
   show i $(lang "upgrade feeds: $feeds_name" "升级feeds仓库: $feeds_name")
   $doProxy ./scripts/feeds update "$fn"
-  $doProxy ./scripts/feeds install "$fn"
+  $doProxy ./scripts/feeds install -a
+  #"$fn"
   exit 0
 }
 
@@ -29,6 +30,7 @@ function action_use_proxy()
     [ ! -z "$has_proxy" ] && ( doProxy="proxychains"; \
       show s $(lang "used ssh proxy($proxy_port)" "检测到ssh代理服务端口($proxy_port)")) || \
       show s $(lang "no ssh proxy" "没有ssh代理服务")
+    doProxy="proxychains"
   fi
   doAction=true
 }
@@ -75,7 +77,8 @@ function action_download_package()
   show i $(lang "download all package source code" "下载所选模块所有源码包")
   cd $op_dir
   if [ $download_proxy_package == true ]; then
-    svpn.sh
+    svpn.sh -r
+    use_proxy=true
     action_use_proxy
   fi
   $doProxy make download $doVerbose $doMakeJ
@@ -105,7 +108,7 @@ function action_make_usb_image_disk()
   local src="$op_dir/bin/$pf/$bf"
   #local nbf=$(basename $bf .bin)"_"$(now).bin
   #local mnt=$(df -h | grep $ud | awk '{print $6}')
-  if [ ! -d "$ud" ]; then
+  if [ ! -e "$ud" ]; then
     show s $(lang "usb disk($ud) not exists" "目标usb盘($ud)不存在")
     exit 0
   fi
@@ -124,7 +127,7 @@ function action_make_usb_image_disk()
     fhash=$(md5sum -b $src | awk '{print $1}')
     show s $(lang "new file" "拷贝文件：") $ud
     lang " filesize: $fsize byte ($fsizeh) md5:$fhash" " 文件大小: $fsize 字节 ($fsizeh) md5:$fhash"
-    sudo dd if=$src of=$ud conv=sync
+    sudo dd if=$src of=$ud conv=fsync
     #sync
   else
     show s $(lang "no file copy." "没有文件被复制")
@@ -235,6 +238,19 @@ function action_build()
     make defconfig
     $doProxy make -j $build_j -l9 $doVerbose
   fi
+}
+
+function action_build_image()
+{
+  show i $(lang "build openwrt image" "仅编译openwrt镜像")
+  cd $op_dir
+  if [ ! -z "$package_name" ]; then
+    $doProxy make package/$package_name/compile $doVerbose $doMakeJ
+    $doProxy make package/$package_name/install $doVerbose $doMakeJ
+  fi
+  $doProxy make package/install $doVerbose $doMakeJ
+  $doProxy make target/install $doVerbose $doMakeJ
+  $doProxy make package/index $doVerbose $doMakeJ
 }
 
 function action_copy_tftp()
@@ -447,6 +463,10 @@ help_download=$(lang \
   "download all package source code" \
   "下载所有选中的package的源码")
 
+help_downloadp=$(lang \
+  "download all package source code from sock5 proxy" \
+  "通过sock5代理下载所有选中的package的源码")
+
 addOption -dl --download \
     flagTrue dest=download_package \
     help="$help_download"
@@ -454,6 +474,8 @@ addOption -dl --download \
 addOption -dl+ --download-proxy \
     flagTrue dest=download_proxy_package \
     help="$help_download"
+
+print $download_proxy_package
 
 #======================================================
 help_backup_config=$(lang \
@@ -514,13 +536,17 @@ help_clear=$(lang \
   "clear project" \
   "清除项目数据")
 
+help_cleart=$(lang \
+  "clear project tmp dir" \
+  "清除项目菜单缓存目录")
+
 addOption -cl --clear \
     flagTrue action=action_clear dest=clear\
     help="$help_clear"
 
 addOption -ct --clear-temp \
     flagTrue action=action_clear dest=clear_temp \
-    help="$help_clear"
+    help="$help_cleart"
 
 #======================================================
 help_make_usb_image_disk=$(lang \
@@ -550,9 +576,23 @@ addOption --tftp \
     help="$help_restart_tftp"
 
 #======================================================
+
+help_build_image=$(lang \
+  "build openwrt image" \
+  "编译openwrt镜像")
+
+addOption -bi   --build-image \
+    flagTrue dest=build_image \
+    help="$help_build_image"
+
+#======================================================
 help_build=$(lang \
   "build openwrt" \
   "编译openwrt")
+
+help_buildj=$(lang \
+  "build openwrt -j" \
+  "多线程编译openwrt")
 
 addOption -b   --build \
     flagTrue dest=build_base \
@@ -560,7 +600,7 @@ addOption -b   --build \
 
 addOption -bj   --build-j \
     dest=build_j\
-    help="$help_build"
+    help="$help_buildj"
 
 #======================================================
 help_copy=$(lang \
@@ -572,13 +612,33 @@ addOption -c   --copy \
     help="$help_copy"
 
 #======================================================
+help_package_name=$(lang \
+  "set package name" \
+  "设置package名称")
+
 help_make_package=$(lang \
   "make package" \
   "编译package")
 
+help_make_packagei=$(lang \
+  "install package" \
+  "安装package")
+
+help_make_packaged=$(lang \
+  "download package source" \
+  "下载package源码")
+
+help_make_packagec=$(lang \
+  "clean package" \
+  "清除package编译文件")
+
+help_make_packager=$(lang \
+  "refresh package" \
+  "刷新package")
+
 addOption -pn   --package-name \
     dest=package_name \
-    help="$help_make_package"
+    help="$help_package_name"
 
 addOption -mp   --make-package \
     flagTrue dest=make_package \
@@ -586,19 +646,19 @@ addOption -mp   --make-package \
 
 addOption -mpi   --make-package-install \
     flagTrue dest=make_package_install \
-    help="$help_make_package"
+    help="$help_make_packagei"
 
 addOption -mpd   --make-package-download \
     flagTrue dest=make_package_download \
-    help="$help_make_package"
+    help="$help_make_packaged"
 
 addOption -mpc   --make-package-clean \
     flagTrue dest=make_package_clean \
-    help="$help_make_package"
+    help="$help_make_packagec"
 
 addOption -mpr   --make-package-refresh \
     flagTrue dest=make_package_refresh \
-    help="$help_make_package"
+    help="$help_make_packager"
 
 #======================================================
 help_make_j=$(lang \
@@ -673,15 +733,16 @@ parseOptions "$@"
 function action_run()
 {
   [ $diff_config == true ] && action_show_diff_config
-  [ $download_package == true -o download_proxy_package == true ] && action_download_package
-  [ $build_base == true ] && action_build
-  [ $build_j ] && action_build
-  [ $copy_tftp == true ] && action_copy_tftp
+  [ $download_package == true -o $download_proxy_package == true ] && action_download_package
   [ $make_package == true -o \
     $make_package_install == true -o \
     $make_package_download == true -o \
     $make_package_clean == true -o \
     $make_package_refresh == true  ] && action_make_package
+  [ $build_base == true ] && action_build
+  [ $build_image == true ] && action_build_image
+  [ $build_j ] && action_build
+  [ $copy_tftp == true ] && action_copy_tftp
 }
 
 action_run

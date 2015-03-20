@@ -1,0 +1,20 @@
+--- # 默认.config调整
+patchs:
+- patch:
+    #used: no
+    path: /target/linux/brcm2708/config-3.14
+    items:
+    - name: 修改rpi默认
+      cfgs: [
+        CONFIG_BCM2708_SPIDEV=y,
+      ]
+      mode: config
+- patch:
+    path: /.config
+    items:
+    - name: 配置BOOT模式
+      cfgs: [
+        CONFIG_BRCM2708_SD_BOOT_PARTSIZE=20,
+        CONFIG_TARGET_ROOTFS_PARTSIZE=236,
+      ]
+      mode: config

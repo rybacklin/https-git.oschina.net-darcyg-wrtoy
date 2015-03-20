@@ -39,7 +39,7 @@ patch:
       CONFIG_PACKAGE_script-utils=y,
     ]
     mode: config
-  - name: minicom,script-utils工具支持
+  - name: zoneinfo工具支持
     cfgs: [
       CONFIG_PACKAGE_zoneinfo-asia=y,
       CONFIG_PACKAGE_zoneinfo-core=y,
@@ -49,5 +49,10 @@ patch:
   - name: cpusage工具支持
     cfgs: [
       CONFIG_PACKAGE_cpusage=y,
+    ]
+    mode: config
+  - name: lrzsz工具支持
+    cfgs: [
+      CONFIG_PACKAGE_lrzsz=y,
     ]
     mode: config

@@ -5,6 +5,9 @@ from utils.utils import *
 from argtools import command, argument
 from utils.patchProj import *
 
+def get_openwrt_root():
+    return os.path.abspath(os.getcwd()+"/../openwrt")
+
 @command.add_sub(name='test')
 @argument('-c', '--clear', action='store_true', default=False, help='清空')
 @argument('-s', '--source-dir', default='/', help='来源目录')
@@ -20,7 +23,7 @@ def test(args):
 
 @command.add_sub(name='proj')
 @argument('projectname', default='', help='项目名称')
-@argument('-s', '--sourcecode-dir', default='/works/openwrt/openwrt', help='源码目录')
+@argument('-s', '--sourcecode-dir', default=get_openwrt_root(), help='源码目录')
 #@argument('-p', '--project-name', default='', help='项目名称')
 @argument('-t', '--project-type', default='x86', help='项目组根')
 @argument('-w', '--enable-write', action='store_true', default=False, help='复写源文件')

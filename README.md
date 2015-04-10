@@ -1,13 +1,45 @@
 # wrtoy(wrtoy构建玩具)
 
-最后更新2015.02.28
-#### 写在前面的话
+最后更新2015.04.10
+####
+安装使用问题加群290045468,可以在线解答
+
+#### 写在前面的话(2015.0228)
 非常郁闷，因为联想笔记本电脑linux驱动的问题，这个Readme写了5次，每次写了两三百字就死机，也不保存写过的信息。
 实在没有心情更新帮助了。
 
 因为原有的构建脚本被废弃了，这里简单说说使用方法
 
+
 ## 安装openwrt编译环境
+
+先安装ubuntu-utils shell工具集
+```bash
+mkdir -p /works/utils
+cd /works/utils
+git clone https://git.oschina.net/darcyg/ubuntu-utils.git 
+cd ubuntu-utils/ubuntu_install_script
+./install_base_lib.sh
+./install_cppide.sh
+./install_utils.sh
+cd ../vpnssh_proxy
+./install_proxy.sh
+cd ../ubuntu_install_script
+./install_env.sh
+```
+
+以上操作，将安装大量的编译工具，都是linux下openwrt或其他开发不可或却的库与工具
+即便最小编译固件用不到相关库，也会某些特定功能开发而用到．
+
+建议安装install_proxy.sh，将安装基于sock5的代理服务．其中需要用户自己申请一下ssh或shadowsocks代理帐号,并修改相关配置代码（在vpnssh_proxy/bin目录的shadowsocks用config.json和vpn.sh中）
+
+安装proxy非常关键，部分库通过代理才能下载．
+配置好以后．通过vpn.sh或svpn.sh开启代理服务
+使用proxychains [cmd]来保证，下载通过代理服务器进行．
+
+有兴趣的人，可以安装一下install_git.sh，主要提供
+＊git的短命令（具体看源码）
+＊配置自动登录git服务器的~/.netrc，这个对在私有git上部署的库的下载访问很有用
 
 ```bash
 mkdir -p /works/openwrt

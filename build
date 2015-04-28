@@ -184,6 +184,8 @@ function action_clear()
   cd $op_dir
   if [ $clear_temp == true ]; then
     rm -rf ./tmp
+  elif [ $clear_dir == true ]; then
+    make dirclean $doVerbose $doMakeJ
   else
     make clean $doVerbose $doMakeJ
   fi
@@ -540,6 +542,10 @@ help_cleart=$(lang \
   "clear project tmp dir" \
   "清除项目菜单缓存目录")
 
+help_cleard=$(lang \
+  "clear project make dirclean" \
+  "清除项目中间编译缓存目录")
+
 addOption -cl --clear \
     flagTrue action=action_clear dest=clear\
     help="$help_clear"
@@ -547,6 +553,10 @@ addOption -cl --clear \
 addOption -ct --clear-temp \
     flagTrue action=action_clear dest=clear_temp \
     help="$help_cleart"
+
+addOption -cd --clear-dir \
+    flagTrue action=action_clear dest=clear_dir \
+    help="$help_cleard"
 
 #======================================================
 help_make_usb_image_disk=$(lang \

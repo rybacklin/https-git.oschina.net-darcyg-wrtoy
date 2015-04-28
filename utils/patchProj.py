@@ -347,29 +347,37 @@ class patchProj:
                         if isinstance(chk_used,bool): chk_used = "yes" if chk_used else "no"
                         elif isinstance(chk_used, str): chk_used = chk_used.lower()
                         if chk_used == "n" or chk_used == "no" or chk_used == "false":
-                            print ": config set not used."
+                            print ""
+                            print "  => config set not used."
                             return
                         else: print ""
+                    else: print ""
                     if ("platform" in yamlobj):
                         chk_platform = yamlobj["platform"]
                         if isinstance(chk_platform,list): pass
                         elif isinstance(chk_platform, str): chk_platform = [ chk_platform.lower() ]
                         if ("-"+self.platform in chk_platform) or ("!"+self.platform in chk_platform):
-                            print ": config set not support this platform."
+                            print ""
+                            print "  => config set not support this platform."
                             return
                         if not (self.platform in chk_platform):
-                            print ": config set not support this platform."
+                            print ""
+                            print "  => config set not support this platform."
                             return
                     if ("projs" in yamlobj):
                         chk_projs = yamlobj["projs"]
                         if isinstance(chk_projs,list): pass
                         elif isinstance(chk_projs, str): chk_projs = [ chk_projs.lower() ]
                         if ("-"+self.proj_name in chk_projs) or ("!"+self.proj_name in chk_projs):
-                            print ": config set not support this project."
+                            print ""
+                            print "  => config set not support this project."
                             return
                         if not (self.proj_name in chk_projs):
-                            print ": config set not support this project."
+                            print ""
+                            print "  => config set not support this project."
                             return
+                    #_hash_before=_hash_after=""
+                    _hash_before=md5(content)
                     for item in yamlobj["items"]:
                         hash_before=hash_after=""
                         if ("name" in item):print " "+item["name"].encode("utf8")
@@ -389,12 +397,17 @@ class patchProj:
                                 print item["orig"]
                                 print "fix:"
                                 print item["fix"]
+                    if not isinstance(content,bool): _hash_after=md5(content)
+                    else : _hash_after=_hash_before
                     if self.show:
                         print content
                     if isWrite and self.write_fix:
                         writefile(path+".fix",content)
                     if isWrite and self.write:
-                        writefile(path,content)
+                        if _hash_before != _hash_after:
+                            writefile(path,content)
+                            print "  => changed"
+                        else: print "  => no change"
                     if self.write and os.path.exists(path+".fix"):
                         os.remove(path+".fix")
                 else:
@@ -457,12 +470,12 @@ class patchProj:
                 if isinstance(patch["orig"],list):
                     tmp_hash=md5(content)
                     for orig in patch["orig"]:
-                        _content = content.replace(orig,patch["fix"])
+                        _content = self.replace(content,orig,patch["fix"],patch)
                         if md5(_content) != tmp_hash:
                             content = _content
                             if not mode=="std+":break
                 else:
-                    content = content.replace(patch["orig"],patch["fix"])
+                    content = self.replace(content,patch["orig"],patch["fix"],patch)
             else:
                 print "no orig(std)",
         elif mode=="regex" or mode=="regex+":
@@ -594,6 +607,40 @@ class patchProj:
                 print content
             return content
         else: return result
+
+    def replace(self,data,orig,new,patch=None):
+        if (isinstance(patch,dict) and "prefix" in patch):
+            p=patch["prefix"]
+            oo=orig
+            nn=new
+            po=""
+            pn=""
+            if isinstance(p,str):
+                po=p
+                pn=p
+            elif isinstance(p,list):
+                if len(p)==1: pn=p
+                elif len(p)>=2:
+                    po=p[0]
+                    pn=p[1]
+            elif isinstance(p,dict):
+                if "orig" in p: po=p["orig"]
+                if "fix" in p: pn=p["fix"]
+            if po!="":
+                oo=""
+                o=orig.split("\n")
+                for i in range(0,len(o)):
+                    oo+=po+o[i]+"\n"
+            if pn!="":
+                nn=""
+                n=new.split("\n")
+                for i in range(0,len(n)):
+                    nn+=pn+n[i]+"\n"
+            return data.replace(oo,nn)
+        else:
+            return data.replace(orig,new)
+
+
 
     def config_line_create(self,id,mode):
         if mode=="y" or mode=="" or mode==None:

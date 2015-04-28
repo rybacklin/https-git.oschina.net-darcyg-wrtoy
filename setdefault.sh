@@ -89,7 +89,7 @@ if [ $mt7620_mtall == true ]; then
   # uboot从tftp刷固件的时候，只需要在tftp文件名处输入7620a即可
   # ./build -cu 将img文件用cp写到/dev/sdb驱动挂载的分区，拷贝固件到U盘（文件名会自动加入拷贝时间）
   # ./build -iu 将img文件用dd写到/dev/sdb(制作x86或rpi的启动盘)
-  [ $set_profile == true -o $add_profile == true ] && ./hardware_manage -bn mtall -bt MTALL -pf ramips -cn mt7620 -tr /works/openwrt/tftpboot -tl 7620a -bf "" -ud /dev/sdb
+  [ $set_profile == true -o $add_profile == true ] && ./hardware_manage -bn mtall -bt MTALL -pf ramips -cn mt7620 -pn mtall -tr /works/openwrt/tftpboot -tl 7620a -bf "" -ud /dev/sdb
   # 本系统调整了openwrt的feeds模式。不在openwrt的feeds目录下直接git项目仓库的feeds
   # 而是在wrtoy/feeds.git目录中建立项目的git仓库，然后针对某一版本git，导出到wrtoy/feeds目录中，openwrt的feeds，都是通过软链访问
   # 这样设计，避免在feeds中调整代码后，相关feeds不能pull的问题
@@ -121,7 +121,7 @@ if [ $x86_mtall == true ]; then
   # uboot从tftp刷固件的时候，只需要在tftp文件名处输入7620a即可
   # ./build -cu 将img文件用cp写到/dev/sdb驱动挂载的分区，拷贝固件到U盘（文件名会自动加入拷贝时间）
   # ./build -iu 将img文件用dd写到/dev/sdb(制作x86或rpi的启动盘)
-  [ $set_profile == true -o $add_profile == true ] && ./hardware_manage -bn generic -bt X86 -pf x86 -cn x86 -tr /works/openwrt/tftpboot -tl x86img -bf "" -ud /dev/sdb
+  [ $set_profile == true -o $add_profile == true ] && ./hardware_manage -bn generic -bt X86 -pf x86 -cn x86 -pn mtall -tr /works/openwrt/tftpboot -tl x86img -bf "" -ud /dev/sdb
   # 本系统调整了openwrt的feeds模式。不在openwrt的feeds目录下直接git项目仓库的feeds
   # 而是在wrtoy/feeds.git目录中建立项目的git仓库，然后针对某一版本git，导出到wrtoy/feeds目录中，openwrt的feeds，都是通过软链访问
   # 这样设计，避免在feeds中调整代码后，相关feeds不能pull的问题
@@ -137,6 +137,13 @@ fi
 project_name=mtall
 
 if [ $change_project == true ]; then
+  project_name=$(./hardware_manage -gv pn)
+  platfrom_name=$(./hardware_manage -gv pf)
+  echo "==========================================================="
+  echo "     project :  $project_name"
+  echo "     platfrom:  $platfrom_name"
+  echo "==========================================================="
+
   # 安装最新版项目
   ./build -I
   # 使.config生效/存在

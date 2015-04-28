@@ -74,6 +74,7 @@ function load_hard_profile()
   op_hp=$(tmp=$(echo "$cfg" | jq ".profile_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_bn=$(tmp=$(echo "$cfg" | jq ".board_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_bt=$(tmp=$(echo "$cfg" | jq ".board_tag" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_pn=$(tmp=$(echo "$cfg" | jq ".project_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_pf=$(tmp=$(echo "$cfg" | jq ".platform" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_cn=$(tmp=$(echo "$cfg" | jq ".chip_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_tr=$(tmp=$(echo "$cfg" | jq ".tftp_root" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
@@ -96,6 +97,7 @@ function copy_config_var()
   [ ! -z "$op_hp" -a "$hard_profile" == ".hardware" -a "$op_hp" != ".hardware" ] && hard_profile=$op_hp
   [ ! -z "$op_bn" -a -z "$board_name" ] && board_name=$op_bn
   [ ! -z "$op_bt" -a -z "$board_tag" ] && board_tag=$op_bt
+  [ ! -z "$op_pn" -a -z "$project_name" ] && project_name=$op_pn
   [ ! -z "$op_pf" -a -z "$platform" ] && platform=$op_pf
   [ ! -z "$op_cn" -a -z "$chip_name" ] && chip_name=$op_cn
   [ ! -z "$op_tr" -a -z "$tftp_root" ] && tftp_root=$op_tr
@@ -116,6 +118,7 @@ function save_hard_profile()
   \"$hard_profile\""
   [ "$op_bn" != "$board_name" -a ! -z "$board_name" ] && opt="$opt | .board_name=\"$board_name\""
   [ "$op_bt" != "$board_tag" -a ! -z "$board_tag" ] && opt="$opt | .board_tag=\"$board_tag\""
+  [ "$op_pn" != "$project_name" -a ! -z "$project_name" ] && opt="$opt | .project_name=\"$project_name\""
   [ "$op_pf" != "$platform" -a ! -z "$platform" ] && opt="$opt | .platform=\"$platform\""
   [ "$op_cn" != "$chip_name" -a ! -z "$chip_name" ] && opt="$opt | .chip_name=\"$chip_name\""
   [ "$op_tr" != "$tftp_root" -a ! -z "$tftp_root" ] && opt="$opt | .tftp_root=\"$tftp_root\""
@@ -147,6 +150,7 @@ function show_config_var()
     echo " profile_name  :" $profile_name
     echo " board_name    :" $board_name
     echo " board_tag     :" $board_tag
+    echo " project_name  :" $project_name
     echo " platform      :" $platform
     echo " chip_name     :" $chip_name
     echo " tftp_root     :" $tftp_root
@@ -161,6 +165,7 @@ function show_config_var()
     echo " profile_name  :" $profile_name "($op_hp)"
     echo " board_name    :" $board_name "($op_bn)"
     echo " board_tag     :" $board_tag "($op_bt)"
+    echo " project_name  :" $project_name "($op_pn)"
     echo " platform      :" $platform "($op_pf)"
     echo " chip_name     :" $chip_name "($op_cn)"
     echo " tftp_root     :" $tftp_root "($op_tr)"
@@ -235,6 +240,7 @@ function action_set_default_config()
   #hard_profile="default"
   board_name="wrtoy"
   board_tag="WRTOY"
+  project_name="mtall"
   platform="ramips"
   chip_name="mt7620"
   tftp_root="$op_tl_dir"
@@ -323,6 +329,12 @@ function action_get_cfg_var()
     "$get_variable" == "board_tag" -o \
     "$get_variable" == "all" ] && \
     show_cfg_var "$op_bt" "board_tag"
+
+  [ "$get_variable" == "pn" -o \
+    "$get_variable" == "projectname" -o \
+    "$get_variable" == "project_name" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_pn" "project_name"
 
   [ "$get_variable" == "pf" -o \
     "$get_variable" == "platform" -o \
@@ -426,6 +438,15 @@ help_board_tag=$(lang \
 addOption -bt   --board-tag \
   dest=board_tag \
   help="$help_board_tag"
+
+#======================================================
+help_project_name=$(lang \
+  "set project name" \
+  "设置项目名称")
+
+addOption -pn   --project-name \
+  dest=project_name \
+  help="$help_project_name"
 
 #======================================================
 help_platform=$(lang \

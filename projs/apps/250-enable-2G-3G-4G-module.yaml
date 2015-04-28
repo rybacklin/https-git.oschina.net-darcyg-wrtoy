@@ -8,7 +8,6 @@ patchs:
       cfgs: [
         CONFIG_PACKAGE_kmod-mii=y,
         CONFIG_DEFAULT_comgt=y,
-
         {
           i: CONFIG_DEFAULT_kmod-leds-gpio,
           c: [
@@ -56,7 +55,6 @@ patchs:
         CONFIG_PACKAGE_chat=y,
         CONFIG_PACKAGE_umbim=y,
         CONFIG_PACKAGE_uqmi=y,
-        #CONFIG_PACKAGE_comgt=y,
         CONFIG_DEFAULT_kmod-usb-serial=y,
         CONFIG_DEFAULT_kmod-usb-serial-option=y,
         {

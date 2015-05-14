@@ -29,7 +29,7 @@ patchs:
     items:
     - name: 启用MTALL-mt7620a-DevBoard
       cfgs: [
-        CONFIG_TARGET_ramips_mt7620_MTALL=y,
+        CONFIG_TARGET_ramips_mt7620_MTALL32M=y,
       ]
       mode: config
 - patch:
@@ -54,8 +54,16 @@ patchs:
       orig: !!str
         "\tcase \"$machine\" in\n"
       fix: !!str
-        "\t*\"MTALL\")\n\
-        \t\tname=\"mtall\"\n\
+        "\t*\"MTALL64M\")\n\
+        \t\tname=\"mtall64m\"\n\
+        \t\t;;\n\n"
+      mode: add
+    - name: 增加自定义设备MTALL(1) 增加定制设备名称-注意匹配
+      orig: !!str
+        "\tcase \"$machine\" in\n"
+      fix: !!str
+        "\t*\"MTALL32M\")\n\
+        \t\tname=\"mtall32m\"\n\
         \t\t;;\n\n"
       mode: add
     - name: 增加自定义设备MTALL(1) 增加定制设备名称-注意匹配
@@ -73,7 +81,13 @@ patchs:
       orig: !!str
         "\tcase \"$board\" in\n"
       fix: !!str
-        "\tmtall | \\\n"
+        "\tmtall64m | \\\n"
+      mode: add
+    - name: 增加自定义设备MTALL(2) 增加定制设备
+      orig: !!str
+        "\tcase \"$board\" in\n"
+      fix: !!str
+        "\tmtall32m | \\\n"
       mode: add
     - name: 增加自定义设备MTALL(2) 增加定制设备
       orig: !!str
@@ -88,7 +102,13 @@ patchs:
       orig: !!str
         "Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp_n53,RP-N53)\n"
       fix: !!str
-        "\nImage/Build/Profile/MTALL=$(call BuildFirmware/Default32M/$(1),$(1),mtall,MTALL)\n\n"
+        "\nImage/Build/Profile/MTALL64M=$(call BuildFirmware/Default64M/$(1),$(1),mtall64m,MTALL64M)\n\n"
+      mode: add
+    - name: 增加自定义设备MTALL(4) 增加定制设备编译参数
+      orig: !!str
+        "Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp_n53,RP-N53)\n"
+      fix: !!str
+        "\nImage/Build/Profile/MTALL32M=$(call BuildFirmware/Default32M/$(1),$(1),mtall32m,MTALL32M)\n\n"
       mode: add
     - name: 增加自定义设备MTALL(4) 增加定制设备编译参数
       orig: !!str
@@ -100,7 +120,13 @@ patchs:
       orig: !!str
         "\t$(call Image/Build/Profile/RP-N53,$(1))\n"
       fix: !!str
-        "\t$(call Image/Build/Profile/MTALL,$(1))\n"
+        "\t$(call Image/Build/Profile/MTALL64M,$(1))\n"
+      mode: add
+    - name: 增加自定义设备MTALL(5) 增加定制设备编译
+      orig: !!str
+        "\t$(call Image/Build/Profile/RP-N53,$(1))\n"
+      fix: !!str
+        "\t$(call Image/Build/Profile/MTALL32M,$(1))\n"
       mode: add
     - name: 增加自定义设备MTALL(5) 增加定制设备编译
       orig: !!str
@@ -115,12 +141,25 @@ patchs:
       base: /target/linux/ramips/
       orig: [
         {
-          src: profiles/MTALL.dts,
-          dst: dts/MTALL.dts
+          src: profiles/MTALL64M.dts,
+          dst: dts/MTALL64M.dts
         },
         {
-          src: profiles/mtall.mk,
-          dst: mt7620/profiles/mtall.mk
+          src: profiles/mtall64m.mk,
+          dst: mt7620/profiles/mtall64m.mk
+        },
+      ]
+      mode: copy,#debug
+    - name: 增加自定义设备MTALL(6) 主板IO配置dts,Menuconfig显示
+      base: /target/linux/ramips/
+      orig: [
+        {
+          src: profiles/MTALL32M.dts,
+          dst: dts/MTALL32M.dts
+        },
+        {
+          src: profiles/mtall32m.mk,
+          dst: mt7620/profiles/mtall32m.mk
         },
       ]
       mode: copy,#debug
@@ -145,7 +184,20 @@ patchs:
       orig: !!str
         "\tcase $board in\n"
       fix: !!str
-        "\tmtall)\n\
+        "\tmtall64m)\n\
+        \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
+        \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
+        \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
+        \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"0 1 2 3 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
+        \t\t;;\n\n"
+      mode: add,#debug
+    - name: 增加自定义设备MTALL(8)A 设备uci-default配置（老方法）
+      orig: !!str
+        "\tcase $board in\n"
+      fix: !!str
+        "\tmtall32m)\n\
         \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
         \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
         \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
@@ -174,7 +226,7 @@ patchs:
       orig: !!str
         "\tcase $board in\n"
       fix: !!str
-        "\tmtall)\n\
+        "\tmtall64m)\n\
         \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
         \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
         \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
@@ -183,7 +235,20 @@ patchs:
         \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
         \t\t;;\n\n"
       mode: add,#debug
-    - name: 增加自定义设备MTALL(8)A 设备uci-default配置（老方法）
+    - name: 增加自定义设备MTALL(8)B 设备board.d配置（新方法）
+      orig: !!str
+        "\tcase $board in\n"
+      fix: !!str
+        "\tmtall32m)\n\
+        \t\tucidef_set_interfaces_lan_wan \"eth0.1\" \"eth0.2\"\n\
+        \t\t#ucidef_set_interface_wan \"eth0.2\" \n\
+        \t\t#ucidef_set_interface_lan \"eth0.1\" \n\
+        \t\tucidef_add_switch \"switch0\" \"1\" \"1\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"1\" \"0 1 2 3 6t\"\n\
+        \t\tucidef_add_switch_vlan \"switch0\" \"2\" \"4 6t\"\n\
+        \t\t;;\n\n"
+      mode: add,#debug
+    - name: 增加自定义设备MTALL(8)B 设备board.d配置（新方法）
       orig: !!str
         "\tcase $board in\n"
       fix: !!str
@@ -206,7 +271,11 @@ patchs:
         "FEATURES+=usb rtc\n"
       #mode: std, #add,#debug
 - patch:
-    path: /target/linux/ramips/dts/MTALL.dts
+    path: [
+      /target/linux/ramips/dts/MTALL64M.dts,
+      /target/linux/ramips/dts/MTALL32M.dts,
+      /target/linux/ramips/dts/MTALL16M.dts,
+    ]
     items:
     - name: 设备RTC功能b
       orig: !!str
@@ -228,30 +297,25 @@ patchs:
 		\t\t\treg = <0x68>;\n
 		\t\t};\n
 	    \t};\n"
-      mode: add,#debug
+      mode: skip,#add,#debug
 - patch:
-    path: /target/linux/ramips/dts/MTALL16M.dts
+    path: [
+      /target/linux/ramips/dts/MTALL64M.dts,
+      /target/linux/ramips/dts/MTALL32M.dts,
+      /target/linux/ramips/dts/MTALL16M.dts,
+    ]
     items:
     - name: 设备RTC功能c
       orig: !!str
-        "\twmac@10180000 {\n\
-		\t\tralink,mtd-eeprom = <&factory 0>;\n\
-	    \t};\n"
+        "\t\ti2c@900 {\n\
+        \t\t\tstatus = \"okay\";\n"
       fix: !!str
-        "\n\n\ti2c-gpio {\n
-		\t\tcompatible = \"i2c-gpio\";\n
-        \t\t\n
-		\t\tgpios = <&gpio2 0 0 /* sda = wan_led */\n
-		\t\t\t&gpio3 0 0 /* scl = wlan_led */ >;\n
-		\t\ti2c-gpio,delay-us = <10>;/* ~20hz */\n
-		\t\t#address-cells = <1>;\n
-		\t\t#size-cells = <0>;\n
-        \t\t\n
-		\t\trtc@68 {\n
-	    \t\t\tcompatible = \"dallas,ds1307\";\n
-		\t\t\treg = <0x68>;\n
-		\t\t};\n
-	    \t};\n"
+        "\t\t\t\n\
+        \t\t\trtc@68 {\n\
+        \t\t\t\tcompatible = \"dallas,ds1307\";\n\
+        \t\t\t\treg = <0x68>;\n\
+        \t\t\t};\n"
+      #prefix: ["\t\t","\t\t"]
       mode: add,#debug
 - patch:
     #path: /.config

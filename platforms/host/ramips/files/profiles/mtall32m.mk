@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-define Profile/MTALL
+define Profile/MTALL32M
 	NAME:=MTALL mt7620a DevBoard 32MB
 	PACKAGES:=\
 		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer \
@@ -13,10 +13,10 @@ define Profile/MTALL
 		usb-modeswitch usb-modeswitch-data comgt
 endef
 
-define Profile/MTALL/Description
+define Profile/MTALL32M/Description
 	Package set for MTALL mt7620a IOT DevBoard
 	256MB DDR2 + 32MB Flash
 endef
 
-$(eval $(call Profile,MTALL))
+$(eval $(call Profile,MTALL32M))
 

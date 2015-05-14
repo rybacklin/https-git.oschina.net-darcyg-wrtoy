@@ -62,11 +62,19 @@ patchs:
 - patch:
     path: /target/linux/ramips/image/Makefile
     items:
+    - name: 增加自定义设备MTALL(3) 增加64MB设备编译函数
+      orig: !!str
+        "BuildFirmware/Default16M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))\n\n"
+      fix: !!str
+        "ralink_default_fw_size_64M=66453504\n\
+        BuildFirmware/Default64M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_64M),$(4))\n\
+        BuildFirmware/Default64M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))\n\n"
+      mode: add
     - name: 增加自定义设备MTALL(3) 增加32MB设备编译函数
       orig: !!str
         "BuildFirmware/Default16M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))\n\n"
       fix: !!str
-        "ralink_default_fw_size_32M=32243712\n\
+        "ralink_default_fw_size_32M=32899072\n\
         BuildFirmware/Default32M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_32M),$(4))\n\
         BuildFirmware/Default32M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))\n\n"
       mode: add
@@ -92,12 +100,12 @@ patchs:
       base: /target/linux/ramips/
       orig: [
         {
-          src: patches/9999-reg-shutdown-fix-32MB-reboot.3.14.patch,
+          src: patches/9999-a-reg-shutdown-fix-32MB-reboot.3.14.patch,
           dst: patches-3.14/9999-fix-32MB-reboot-by-Manfeel.patch
         },
         {
-          src: patches/9999-reg-shutdown-fix-32MB-reboot.3.18.patch,
-          dst: patches-3.18/9999-fix-32MB-reboot-by-Manfeel.patch
+          src: patches/9999-a-reg-shutdown-fix-32MB-reboot.3.18.patch,
+          dst: patches-3.18/9999-a-fix-32MB-reboot-by-Manfeel.patch
         },
       ]
       mode: copy,#debug

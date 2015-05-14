@@ -1,59 +1,60 @@
 --- # 默认.config调整系统
-patch:
-  #used: no
-  path: /.config
-  items:
-  - name: 禁用所有目标平台
-    cfgs: [
-      CONFIG_TARGET_ppc40x=n,
-      CONFIG_TARGET_realview=n,
-      CONFIG_TARGET_arm64=n,
-      CONFIG_TARGET_sunxi=n,
-      CONFIG_TARGET_atheros=n,
-      CONFIG_TARGET_ar71xx=n,
-      CONFIG_TARGET_at91=n,
-      CONFIG_TARGET_avr32=n,
-      CONFIG_TARGET_brcm2708=n,
-      CONFIG_TARGET_bcm53xx=n,
-      CONFIG_TARGET_brcm47xx=n,
-      CONFIG_TARGET_brcm63xx=n,
-      CONFIG_TARGET_netlogic=n,
-      CONFIG_TARGET_cns21xx=n,
-      CONFIG_TARGET_cns3xxx=n,
-      CONFIG_TARGET_octeon=n,
-      CONFIG_TARGET_ep93xx=n,
-      CONFIG_TARGET_cobalt=n,
-      CONFIG_TARGET_gemini=n,
-      CONFIG_TARGET_mpc52xx=n,
-      CONFIG_TARGET_mpc83xx=n,
-      CONFIG_TARGET_mpc85xx=n,
-      CONFIG_TARGET_imx6=n,
-      CONFIG_TARGET_mxs=n,
-      CONFIG_TARGET_adm8668=n,
-      CONFIG_TARGET_adm5120=n,
-      CONFIG_TARGET_xburst=n,
-      CONFIG_TARGET_ixp4xx=n,
-      CONFIG_TARGET_lantiq=n,
-      CONFIG_TARGET_malta=n,
-      CONFIG_TARGET_mvebu=n,
-      CONFIG_TARGET_kirkwood=n,
-      CONFIG_TARGET_orion=n,
-      CONFIG_TARGET_pxa=n,
-      CONFIG_TARGET_rb532=n,
-      CONFIG_TARGET_mcs814x=n,
-      CONFIG_TARGET_oxnas=n,
-      CONFIG_TARGET_ipq806x=n,
-      CONFIG_TARGET_au1000=n,
-      CONFIG_TARGET_ramips=n,
-      CONFIG_TARGET_ar7=n,
-      CONFIG_TARGET_omap=n,
-      CONFIG_TARGET_uml=n,
-      CONFIG_TARGET_x86=n,
-      CONFIG_TARGET_x86_64=n,
-    ]
-    mode: config
-  - name: 启用x86平台
-    cfgs: [
-      CONFIG_TARGET_x86=y,
-    ]
-    mode: config
+patchs:
+- patch:
+    #used: no
+    path: /.config
+    items:
+    - name: 禁用所有目标平台
+      cfgs: [
+        CONFIG_TARGET_ppc40x=n,
+        CONFIG_TARGET_realview=n,
+        CONFIG_TARGET_arm64=n,
+        CONFIG_TARGET_sunxi=n,
+        CONFIG_TARGET_atheros=n,
+        CONFIG_TARGET_ar71xx=n,
+        CONFIG_TARGET_at91=n,
+        CONFIG_TARGET_avr32=n,
+        CONFIG_TARGET_brcm2708=n,
+        CONFIG_TARGET_bcm53xx=n,
+        CONFIG_TARGET_brcm47xx=n,
+        CONFIG_TARGET_brcm63xx=n,
+        CONFIG_TARGET_netlogic=n,
+        CONFIG_TARGET_cns21xx=n,
+        CONFIG_TARGET_cns3xxx=n,
+        CONFIG_TARGET_octeon=n,
+        CONFIG_TARGET_ep93xx=n,
+        CONFIG_TARGET_cobalt=n,
+        CONFIG_TARGET_gemini=n,
+        CONFIG_TARGET_mpc52xx=n,
+        CONFIG_TARGET_mpc83xx=n,
+        CONFIG_TARGET_mpc85xx=n,
+        CONFIG_TARGET_imx6=n,
+        CONFIG_TARGET_mxs=n,
+        CONFIG_TARGET_adm8668=n,
+        CONFIG_TARGET_adm5120=n,
+        CONFIG_TARGET_xburst=n,
+        CONFIG_TARGET_ixp4xx=n,
+        CONFIG_TARGET_lantiq=n,
+        CONFIG_TARGET_malta=n,
+        CONFIG_TARGET_mvebu=n,
+        CONFIG_TARGET_kirkwood=n,
+        CONFIG_TARGET_orion=n,
+        CONFIG_TARGET_pxa=n,
+        CONFIG_TARGET_rb532=n,
+        CONFIG_TARGET_mcs814x=n,
+        CONFIG_TARGET_oxnas=n,
+        CONFIG_TARGET_ipq806x=n,
+        CONFIG_TARGET_au1000=n,
+        CONFIG_TARGET_ramips=n,
+        CONFIG_TARGET_ar7=n,
+        CONFIG_TARGET_omap=n,
+        CONFIG_TARGET_uml=n,
+        CONFIG_TARGET_x86=n,
+        CONFIG_TARGET_x86_64=n,
+      ]
+      mode: config
+    - name: 启用x86平台
+      cfgs: [
+        CONFIG_TARGET_x86=y,
+      ]
+      mode: config

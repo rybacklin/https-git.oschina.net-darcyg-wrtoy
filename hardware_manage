@@ -81,6 +81,13 @@ function load_hard_profile()
   op_tl=$(tmp=$(echo "$cfg" | jq ".tftp_link" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_bf=$(tmp=$(echo "$cfg" | jq ".bin_file" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_ud=$(tmp=$(echo "$cfg" | jq ".usb_dev" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_pbc=$(tmp=$(echo "$cfg" | jq ".project.boardchip" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_pbt=$(tmp=$(echo "$cfg" | jq ".project.boardtype" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_pbn=$(tmp=$(echo "$cfg" | jq ".project.boardname" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_pbv=$(tmp=$(echo "$cfg" | jq ".project.boardver" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_pbd=$(tmp=$(echo "$cfg" | jq ".project.boarddate" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_uu=$(tmp=$(echo "$cfg" | jq ".upgrade.url" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_ua=$(tmp=$(echo "$cfg" | jq ".upgrade.useragent" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_rh=$(tmp=$(echo "$cfg" | jq ".release_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_bh=$(tmp=$(echo "$cfg" | jq ".beta_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_ch=$(tmp=$(echo "$cfg" | jq ".current_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
@@ -104,6 +111,13 @@ function copy_config_var()
   [ ! -z "$op_tl" -a -z "$tftp_link" ] && tftp_link=$op_tl
   [ ! -z "$op_bf" -a -z "$bin_file" -o "$bin_file" == "-" ] && bin_file=$op_bf
   [ ! -z "$op_ud" -a -z "$usb_dev" -o "$usb_dev" == "-" ] && usb_dev=$op_ud
+  [ ! -z "$op_pbc" -a -z "$project_boardchip" -o "$project_boardchip" == "-" ] && project_boardchip=$op_pbc
+  [ ! -z "$op_pbt" -a -z "$project_boardtype" -o "$project_boardtype" == "-" ] && project_boardtype=$op_pbt
+  [ ! -z "$op_pbn" -a -z "$project_boardname" -o "$project_boardname" == "-" ] && project_boardname=$op_pbn
+  [ ! -z "$op_pbv" -a -z "$project_boardver" -o "$project_boardver" == "-" ] && project_boardver=$op_pbv
+  [ ! -z "$op_pbd" -a -z "$project_boarddate" -o "$project_boarddate" == "-" ] && project_boarddate=$op_pbd
+  [ ! -z "$op_uu" -a -z "$upgrade_url" -o "$upgrade_url" == "-" ] && upgrade_url=$op_uu
+  [ ! -z "$op_ua" -a -z "$upgrade_user_agent" -o "$upgrade_user_agent" == "-" ] && upgrade_user_agent=$op_ua
   [ ! -z "$op_rh" -a -z "$release_hash" -o "$release_hash" == "-" ] && release_hash=$op_rh
   [ ! -z "$op_bh" -a -z "$beta_hash" -o "$beta_hash" == "-" ] && beta_hash=$op_bh
   [ ! -z "$op_bh" -a -z "$current_hash" -o "$current_hash" == "-" ] && current_hash=$op_ch
@@ -125,6 +139,13 @@ function save_hard_profile()
   [ "$op_tl" != "$tftp_link" -a ! -z "$tftp_link" ] && opt="$opt | .tftp_link=\"$tftp_link\""
   [ "$op_bf" != "$bin_file" ] && opt="$opt | .bin_file=\"$bin_file\""
   [ "$op_ud" != "$usb_dev" ] && opt="$opt | .usb_dev=\"$usb_dev\""
+  [ "$op_pbc" != "$project_boardchip" ] && opt="$opt | .project.boardchip=\"$project_boardchip\""
+  [ "$op_pbt" != "$project_boardtype" ] && opt="$opt | .project.boardtype=\"$project_boardtype\""
+  [ "$op_pbn" != "$project_boardname" ] && opt="$opt | .project.boardname=\"$project_boardname\""
+  [ "$op_pbv" != "$project_boardver" ] && opt="$opt | .project.boardver=\"$project_boardver\""
+  [ "$op_pbd" != "$project_boarddate" ] && opt="$opt | .project.boarddate=\"$project_boarddate\""
+  [ "$op_uu" != "$upgrade_url" ] && opt="$opt | .upgrade.url=\"$upgrade_url\""
+  [ "$op_ua" != "$upgrade_user_agent" ] && opt="$opt | .upgrade.useragent=\"$upgrade_user_agent\""
   [ "$op_rh" != "$release_hash" ] && opt="$opt | .release_hash=\"$release_hash\""
   [ "$op_ud" != "$beta_hash" ] && opt="$opt | .beta_hash=\"$beta_hash\""
   [ "$op_ch" != "$current_hash" ] && opt="$opt | .current_hash=\"$current_hash\""
@@ -146,35 +167,49 @@ function show_config_var()
   local profile_name=$(get_config_var profile_name)
   show l
   if [ $verbose == false ]; then
-    echo " profile path  :" $ppath
-    echo " profile_name  :" $profile_name
-    echo " board_name    :" $board_name
-    echo " board_tag     :" $board_tag
-    echo " project_name  :" $project_name
-    echo " platform      :" $platform
-    echo " chip_name     :" $chip_name
-    echo " tftp_root     :" $tftp_root
-    echo " tftp_link     :" $tftp_link
-    echo " bin_file      :" $bin_file
-    echo " usb_dev       :" $usb_dev
-    echo " release_hash  :" $release_hash
-    echo " beta_hash     :" $beta_hash
-    echo " current_hash  :" $current_hash
+    echo " profile path       :" $ppath
+    echo " profile_name       :" $profile_name
+    echo " board_name         :" $board_name
+    echo " board_tag          :" $board_tag
+    echo " project_name       :" $project_name
+    echo " platform           :" $platform
+    echo " chip_name          :" $chip_name
+    echo " tftp_root          :" $tftp_root
+    echo " tftp_link          :" $tftp_link
+    echo " bin_file           :" $bin_file
+    echo " usb_dev            :" $usb_dev
+    echo " project.boardchip  :" $project_boardchip
+    echo " project.boardtype  :" $project_boardtype
+    echo " project.boardname  :" $project_boardname
+    echo " project.boardver   :" $project_boardver
+    echo " project.boarddate  :" $project_boarddate
+    echo " upgrade.url        :" $upgrade_url
+    echo " upgrade.useragent  :" $upgrade_user_agent
+    echo " release_hash       :" $release_hash
+    echo " beta_hash          :" $beta_hash
+    echo " current_hash       :" $current_hash
   else
-    echo " profile path  :" $ppath
-    echo " profile_name  :" $profile_name "($op_hp)"
-    echo " board_name    :" $board_name "($op_bn)"
-    echo " board_tag     :" $board_tag "($op_bt)"
-    echo " project_name  :" $project_name "($op_pn)"
-    echo " platform      :" $platform "($op_pf)"
-    echo " chip_name     :" $chip_name "($op_cn)"
-    echo " tftp_root     :" $tftp_root "($op_tr)"
-    echo " tftp_link     :" $tftp_link "($op_tl)"
-    echo " bin_file      :" $bin_file "($op_bf)"
-    echo " usb_dev       :" $usb_dev "($op_ud)"
-    echo " release_hash  :" $release_hash "($op_rh)"
-    echo " beta_hash     :" $beta_hash "($op_bh)"
-    echo " current_hash  :" $current_hash "($op_ch)"
+    echo " profile path       :" $ppath
+    echo " profile_name       :" $profile_name        "($op_hp)"
+    echo " board_name         :" $board_name          "($op_bn)"
+    echo " board_tag          :" $board_tag           "($op_bt)"
+    echo " project_name       :" $project_name        "($op_pn)"
+    echo " platform           :" $platform            "($op_pf)"
+    echo " chip_name          :" $chip_name           "($op_cn)"
+    echo " tftp_root          :" $tftp_root           "($op_tr)"
+    echo " tftp_link          :" $tftp_link           "($op_tl)"
+    echo " bin_file           :" $bin_file            "($op_bf)"
+    echo " usb_dev            :" $usb_dev             "($op_ud)"
+    echo " project.boardchip  :" $project_boardchip   "($op_pbc)"
+    echo " project.boardtype  :" $project_boardtype   "($op_pbt)"
+    echo " project.boardname  :" $project_boardname   "($op_pbn)"
+    echo " project.boardver   :" $project_boardver    "($op_pbv)"
+    echo " project.boarddate  :" $project_boarddate   "($op_pbd)"
+    echo " upgrade.url        :" $upgrade_url         "($op_uu)"
+    echo " upgrade.useragent  :" $upgrade_user_agent  "($op_ua)"
+    echo " release_hash       :" $release_hash        "($op_rh)"
+    echo " beta_hash          :" $beta_hash           "($op_bh)"
+    echo " current_hash       :" $current_hash        "($op_ch)"
   fi
   show l
 }
@@ -246,6 +281,13 @@ function action_set_default_config()
   tftp_root="$op_tl_dir"
   tftp_link="wrtbin"
   usb_dev=""
+  project_boardchip=""
+  project_boardtype=""
+  project_boardname=""
+  project_boardver=""
+  project_boarddate=""
+  upgrade_url=""
+  upgrade_user_agent=""
   release_hash=""
   beta_hash=""
   current_hash=""
@@ -364,6 +406,55 @@ function action_get_cfg_var()
     "$get_variable" == "usb_dev" -o \
     "$get_variable" == "all" ] && \
     show_cfg_var "$op_ud" "usb_dev"
+
+  [ "$get_variable" == "pbc" -o \
+    "$get_variable" == "projectboardchip" -o \
+    "$get_variable" == "project.boardchip" -o \
+    "$get_variable" == "project_boardchip" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_pbc" "project_boardchip"
+
+  [ "$get_variable" == "pbt" -o \
+    "$get_variable" == "projectboardtype" -o \
+    "$get_variable" == "project.boardtype" -o \
+    "$get_variable" == "project_boardtype" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_pbt" "project_boardtype"
+
+  [ "$get_variable" == "pbn" -o \
+    "$get_variable" == "projectboardname" -o \
+    "$get_variable" == "project.boardname" -o \
+    "$get_variable" == "project_boardname" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_pbn" "project_boardname"
+
+  [ "$get_variable" == "pbv" -o \
+    "$get_variable" == "projectboardver" -o \
+    "$get_variable" == "project.boardver" -o \
+    "$get_variable" == "project_boardver" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_pbv" "project_boardver"
+
+  [ "$get_variable" == "pbd" -o \
+    "$get_variable" == "projectboarddate" -o \
+    "$get_variable" == "project.boarddate" -o \
+    "$get_variable" == "project_boarddate" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_pbd" "project_boarddate"
+
+  [ "$get_variable" == "uu" -o \
+    "$get_variable" == "upgradeurl" -o \
+    "$get_variable" == "upgrade.url" -o \
+    "$get_variable" == "upgrade_url" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_uu" "upgrade_url"
+
+  [ "$get_variable" == "ua" -o \
+    "$get_variable" == "upgradeuseragent" -o \
+    "$get_variable" == "upgrade.useragent" -o \
+    "$get_variable" == "upgrade_useragent" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_ua" "upgrade_useragent"
 
   [ "$get_variable" == "rh" -o \
     "$get_variable" == "releasehash" -o \
@@ -494,6 +585,70 @@ addOption -ud   --usb-dev \
   help="$help_usb_dev"
 
 #======================================================
+help_project_boardchip=$(lang \
+  "set project board chip" \
+  "设置项目所用开发板的芯片方案")
+
+addOption -pbc   --project-boardchip \
+  default=- dest=project_boardchip \
+  help="$help_project_boardchip"
+
+#======================================================
+help_project_boardtype=$(lang \
+  "set project board type" \
+  "设置项目所用开发板的编号")
+
+addOption -pbt   --project-boardtype \
+  default=- dest=project_boardtype \
+  help="help_project_boardtype"
+
+#======================================================
+help_project_boardname=$(lang \
+  "set project board name" \
+  "设置项目所用开发板的别名")
+
+addOption -pbn   --project-boardname \
+  default=- dest=project_boardname \
+  help="help_project_boardname"
+
+#======================================================
+help_project_boardver=$(lang \
+  "set project board version" \
+  "设置项目所用开发板的版本号")
+
+addOption -pbv   --project-boardver \
+  default=- dest=project_boardver \
+  help="$help_project_boardver"
+
+#======================================================
+help_project_boarddate=$(lang \
+  "set project board date" \
+  "设置项目所用开发板的定版时间")
+
+addOption -pbd   --project-boarddate \
+  default=- dest=project_boarddate \
+  help="$help_project_boarddate"
+
+#======================================================
+help_upgrade_url=$(lang \
+  "set openwrt firmware upgrade url" \
+  "设置openwrt固件远程升级url")
+
+addOption -uu   --upgrade-url \
+  default=- dest=upgrade_url \
+  help="$help_upgrade_url"
+
+#======================================================
+help_upgrade_user_agent=$(lang \
+  "set openwrt firmware upgrade user-agent" \
+  "设置openwrt固件远程升级UA")
+
+addOption -ua   --upgrade-useragent \
+  default=- dest=upgrade_user_agent \
+  help="$help_upgrade_user_agent"
+
+#======================================================
+
 help_release_hash=$(lang \
   "set openwrt release build hash" \
   "设置openwrt发布版构建hash")

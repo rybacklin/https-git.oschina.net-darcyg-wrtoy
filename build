@@ -127,7 +127,8 @@ function action_make_usb_image_disk()
     fhash=$(md5sum -b $src | awk '{print $1}')
     show s $(lang "new file" "拷贝文件：") $ud
     lang " filesize: $fsize byte ($fsizeh) md5:$fhash" " 文件大小: $fsize 字节 ($fsizeh) md5:$fhash"
-    sudo dd if=$src of=$ud conv=fsync
+    local dmode=$(stat -c "%a" $ud)
+    [ "$dmode" == "666" -o "$dmode" == "777" ] && dd if=$src of=$ud conv=fsync || sudo dd if=$src of=$ud conv=fsync
     #sync
   else
     show s $(lang "no file copy." "没有文件被复制")
@@ -232,6 +233,7 @@ function action_show_diff_config()
 function action_build()
 {
   show i $(lang "build openwrt" "编译openwrt")
+  action_publish_upgrade > /dev/null 2>&1
   cd $op_dir
   if [ -z "$build_j" ]; then
     make defconfig
@@ -246,6 +248,7 @@ function action_build_image()
 {
   show i $(lang "build openwrt image" "仅编译openwrt镜像")
   cd $op_dir
+  make defconfig
   if [ ! -z "$package_name" ]; then
     $doProxy make package/$package_name/compile $doVerbose $doMakeJ
     $doProxy make package/$package_name/install $doVerbose $doMakeJ
@@ -254,6 +257,35 @@ function action_build_image()
   $doProxy make target/install $doVerbose $doMakeJ
   $doProxy make package/index $doVerbose $doMakeJ
 }
+
+function action_build_image_packages()
+{
+  show i $(lang "build openwrt image package install" "仅编译openwrt镜像-包集合")
+  cd $op_dir
+  make defconfig
+  if [ ! -z "$package_name" ]; then
+    $doProxy make package/$package_name/compile $doVerbose $doMakeJ
+    $doProxy make package/$package_name/install $doVerbose $doMakeJ
+  fi
+  $doProxy make package/install $doVerbose $doMakeJ
+}
+
+function action_build_image_linux()
+{
+  show i $(lang "build openwrt image linux install" "仅编译openwrt镜像-Linux")
+  cd $op_dir
+  make defconfig
+  $doProxy make target/install $doVerbose $doMakeJ
+}
+
+function action_build_image_index()
+{
+  show i $(lang "build openwrt image package index" "仅编译openwrt镜像-包索引")
+  cd $op_dir
+  make defconfig
+  $doProxy make package/index $doVerbose $doMakeJ
+}
+
 
 function action_copy_tftp()
 {
@@ -317,9 +349,11 @@ function action_make_package()
   [ $make_package == true ] && pn="compile"
   [ $make_package_install == true ] && pn="install"
   [ $make_package_download == true ] && pn="download"
-  [ $make_package_clean == true ] && pn="chean"
+  [ $make_package_clean == true ] && pn="clean"
   [ $make_package_refresh == true ] && pn="refresh"
-  $doProxy make package/$package_name/$pn $doVerbose $doMakeJ
+  [ $make_package_index == true ] && pn="Index"
+  make defconfig
+  [ "$pn" == "Index" ] && make package/index || $doProxy make package/$package_name/$pn $doVerbose $doMakeJ
   exit 0
 }
 
@@ -365,9 +399,10 @@ function action_patch_platform()
 {
   show i $(lang "patch project(platform)" "给当前openwrt打上项目平台补丁")
   cd $op_root
-  local board_type=$(./hardware_manage -gv pf)
-  local board_name=$(./hardware_manage -gv bn)
-  $doProxy ./patch_openwrt.py proj -t $board_type $board_name -w -P
+  local board_platform=$(./hardware_manage -gv pf)
+  local board_type=$(./hardware_manage -gv bp)
+  [ -z "$patch_platform" ] && board_type="$patch_platform"
+  $doProxy ./patch_openwrt.py proj -t $board_platform $board_type -w -P
 }
 
 function action_patch_host()
@@ -379,7 +414,7 @@ function action_patch_host()
 
 function action_publish_upgrade()
 {
-  show i $(lang "publish sysupgrade firmware info" "openwrt发布升级固件信息")  -
+  show i $(lang "publish sysupgrade firmware info" "openwrt发布升级固件信息")
   cd $op_root
   local bn=$(./hardware_manage -gv bn)
   local bt=$(./hardware_manage -gv bt)
@@ -497,6 +532,135 @@ function action_publish_upgrade()
   # cfgdir=$op_dir/custom-feeds/common-system-fix/$pn-admin-ui
   # open-public-admin-ui
   # cfgdir=$op_dir/custom-feeds/common-system-fix/open-public-admin-ui
+}
+
+function action_mount_fs()
+{
+  show i $(lang "mount/umount remote server fs to localhost" "映射远程服务器地址到本机")
+  cd $op_root
+  local rr=$(./hardware_manage -gv rr)
+  local lr=$(./hardware_manage -gv lr)
+  [ -z "$rr" -o -z "$lr" ] && {
+    show i $(lang "error config" "配置错误")
+    exit 0
+  }
+  if [ ! -d "$lr" ]; then
+    mkdir -p "$lr"
+  else
+    local trr=$(df -h | grep ${lr:0:-1} | awk '{print $1}')
+    #echo $rr $trr
+    [ "$trr" == "$rr" ] && {
+      show i $(lang "remote fs exist" "远程目录已经mount挂载")
+      exit 0
+    }
+    [ ! -z "$trr" ] && sudo umount $lr
+  fi
+  show i $(lang "- sshfs: $rr mount at $lr" "- sshfs: $rr 挂载到 $lr")
+  sshfs $rr $lr
+}
+
+function action_umount_fs()
+{
+  show i $(lang "mount/umount remote server fs to localhost" "映射远程服务器地址到本机")
+  cd $op_root
+  local rr=$(./hardware_manage -gv rr)
+  local lr=$(./hardware_manage -gv lr)
+  [ -z "$rr" -o -z "$lr" ] && {
+    show i $(lang "error config" "配置错误")
+    exit 0
+  }
+  local trr=$(df -h | grep ${lr:0:-1} | awk '{print $1}')
+  [ ! -z "$trr" ] && umount $lr
+}
+
+function action_upload_firmware()
+{
+  show i $(lang "update firmware or all packages to remote server" "上传固件或所有包文件到远程服务器")
+  cd $op_root
+  local rr=$(./hardware_manage -gv rr)
+  local lr=$(./hardware_manage -gv lr)
+  [ -z "$rr" -o -z "$lr" ] && {
+    show i $(lang "error config" "配置错误")
+    exit 0
+  }
+  local trr=$(df -h | grep ${lr:0:-1} | awk '{print $1}')
+  #echo $trr
+  [ "$trr" != "$rr" -o ! -d "$lr" ] && {
+    #show i $(lang "need mount remote fs at local directory" "必须mount挂载远程目录")
+    #exit 0
+    action_mount_fs
+  }
+  #echo "111111111"
+  local bn=$(./hardware_manage -gv bn)
+  local bt=$(./hardware_manage -gv bt)
+  local pf=$(./hardware_manage -gv pf)
+  local pn=$(./hardware_manage -gv pn)
+  local cn=$(./hardware_manage -gv cn)
+  local tr=$(./hardware_manage -gv tr)
+  local tl=$(./hardware_manage -gv tl)
+  local bf=$(./hardware_manage -gv bf)
+  local pbc=$(./hardware_manage -gv pbc)
+  local pbt=$(./hardware_manage -gv pbt)
+  local pbn=$(./hardware_manage -gv pbn)
+  local pbv=$(./hardware_manage -gv pbv)
+  local pbd=$(./hardware_manage -gv pbd)
+  local uu=$(./hardware_manage -gv uu)
+  local ua=$(./hardware_manage -gv ua)
+  local link="$tr/$tl"
+  local cfgfile=""
+
+  local ofile=$tr/$(basename $(readlink $link))
+  local nowdate=$(date +%Y-%m-%dT%H:%M:%S)
+  local nowdt=$(date +%Y%m%dT%H%M%S)
+  local ofhash=$(md5sum -b $ofile | awk '{print $1}')
+  local ofsize=$(ls -l $ofile | awk '{print $5}')
+  local ofdtime=$(stat -c %y $ofile | awk -F. '{print $1}' | awk '{print $1"T"$2}')
+  local ofdt=$(date --date="$(stat -c %y $ofile)" +%Y%m%dT%H%M%S)
+  local nfsize=0
+  #echo $ofile
+  #echo $nowdate
+  #echo $ofhash
+  #echo $ofsize
+  #echo $ofdtime
+
+  local nd=$(realpath -s $lr/fw/$ofdt/)
+  local nfb=$nd/$(basename $ofile)
+
+  [ ! -d "$nd" -a -n "$nd" ] && mkdir -p "$nd"
+  [ -f "$ofile" ] && {
+    show i $(lang "copy firmware $ofile => $nfb" "拷贝固件 $ofile => $nfb")
+    [ -f "$nfb" ] && {
+      nfsize=$(ls -l $nfb | awk '{print $5}')
+    }
+    [ "$nfsize" -ne "$ofsize" ] && rsync -av --progress "$ofile" "$nfb"
+    show i $(lang "firmware size : $nfsize [remote] / $ofsize [local]" "固件大小 : $nfsize [远程] / $ofsize [本地]")
+    show i $(lang "firmware md5  : $ofhash" "固件 md5 : $ofhash")
+
+    cfgdir=$op_dir/custom-feeds/common-system-fix/$pn-firstuprun/files/etc
+    if [ -f "$cfgdir/set-upgrade" ]; then
+      #fc=$(cat $cfgdir/set-upgrade)
+      show i $(lang "copy set-upgrade" "拷贝 set-upgrade")
+      cp "$cfgdir/set-upgrade" "$nd/set-upgrade"
+    else
+      cfgdir=$op_dir/custom-feeds/common-system-fix/firstuprun/files/etc
+      if [ -f "$cfgdir/set-upgrade" ]; then
+        #fc=$(cat $cfgdir/set-upgrade)
+        show i $(lang "copy set-upgrade" "拷贝 set-upgrade")
+        cp "$cfgdir/set-upgrade" "$nd/set-upgrade"
+      fi
+    fi
+
+    cfgdir=$tr
+    if [ -f "$cfgdir/$pn.$pf.json" ]; then
+      show i $(lang "copy $pn.json" "拷贝 $pn.$pf.json")
+      cp "$cfgdir/$pn.$pf.json" "$nd/$pn.json"
+    elif [ -f "$cfgdir/$pn.json" ]; then
+      show i $(lang "copy $pn.json" "拷贝 $pn.$pf.json")
+      cp "$cfgdir/$pn.json" "$nd/$pn.json"
+    fi
+  }
+
+  fusermount -u $lr
 }
 
 doAction=false
@@ -719,12 +883,36 @@ addOption --tftp \
 #======================================================
 
 help_build_image=$(lang \
-  "build openwrt image" \
-  "编译openwrt镜像")
+  "only build openwrt image" \
+  "仅生成openwrt镜像")
+
+help_build_image_p=$(lang \
+  "only build openwrt image package install" \
+  "仅生成openwrt镜像-包集合")
+
+help_build_image_l=$(lang \
+  "only build openwrt image linux install" \
+  "仅生成openwrt镜像-Linux")
+
+help_build_image_i=$(lang \
+  "only build openwrt image package index" \
+  "仅生成openwrt镜像-包索引")
 
 addOption -bi   --build-image \
     flagTrue dest=build_image \
     help="$help_build_image"
+
+addOption -bip   --build-image-packages \
+    flagTrue dest=build_image_packages \
+    help="$help_build_image_p"
+
+addOption -bil   --build-image-linux \
+    flagTrue dest=build_image_linux \
+    help="$help_build_image_l"
+
+addOption -bii   --build-image-index \
+    flagTrue dest=build_image_index \
+    help="$help_build_image_i"
 
 #======================================================
 help_build=$(lang \
@@ -777,6 +965,10 @@ help_make_packager=$(lang \
   "refresh package" \
   "刷新package")
 
+help_make_packageI=$(lang \
+  "Index package" \
+  "索引package")
+
 addOption -pn   --package-name \
     dest=package_name \
     help="$help_package_name"
@@ -800,6 +992,10 @@ addOption -mpc   --make-package-clean \
 addOption -mpr   --make-package-refresh \
     flagTrue dest=make_package_refresh \
     help="$help_make_packager"
+
+addOption -mpI   --make-package-index \
+    flagTrue dest=make_package_index \
+    help="$help_make_packageI"
 
 #======================================================
 help_make_j=$(lang \
@@ -864,6 +1060,25 @@ addOption -ph   --patch-host \
     flagTrue action=action_patch_host dest=patch_host\
     help="$help_patch_host"
 
+#======================================================
+help_mount_fs=$(lang \
+  "mount remote fs to local" \
+  "mount远程目录到本地")
+
+addOption -mf   --mount-fs \
+    flagTrue action=action_mount_fs dest=mount_fs\
+    help="$help_mount_fs"
+
+
+#======================================================
+help_upload_fw=$(lang \
+  "upload new firmware to remote fs" \
+  "上传新固件到远程目录")
+
+addOption -uf   --upload-firmware \
+    flagTrue action=action_upload_firmware dest=upload_fw\
+    help="$help_upload_fw"
+
 #addOption -P --platform \
 #    action=action_reset_last_openwrt \
 #    help="set platform"
@@ -879,9 +1094,13 @@ function action_run()
     $make_package_install == true -o \
     $make_package_download == true -o \
     $make_package_clean == true -o \
-    $make_package_refresh == true  ] && action_make_package
+    $make_package_refresh == true -o \
+    $make_package_index == true ] && action_make_package
   [ $build_base == true ] && action_build
   [ $build_image == true ] && action_build_image
+  [ $build_image_packages == true ] && action_build_image_packages
+  [ $build_image_linux == true ] && action_build_image_linux
+  [ $build_image_index == true ] && action_build_image_index
   [ $build_j ] && action_build
   [ $copy_tftp == true ] && action_copy_tftp
   [ $publish_upgrade == true ] && action_publish_upgrade

@@ -17,8 +17,16 @@ function get_feed_config_var()
   [ -z "$cfg" ] && cfg="{}"
   local packname=$1
   local mode
-  [ -z "$2" -o "$2" == "source" -o "$2" == "src" ] && mode="source" || mode="hash"
-  [ -z "$packname" ] && echo 0 || \
+  if [ -z "$2" -o "$2" == "source" -o "$2" == "src" ]; then
+    mode="source"
+  elif [ "$2" == "hash" -o "$2" == "md5" ]; then
+    mode="hash"
+  elif [ "$2" == "branch" -o "$2" == "br" ]; then
+    mode="branch"
+  else
+    mode="source"
+  fi
+  [ -z "$packname" ] && echo "" || \
     echo $(tmp=$(echo "$cfg" | jq ".feeds.$packname.$mode" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
 }
 
@@ -30,14 +38,17 @@ function set_feed_config_var()
   local packname=$1
   local src=$2
   local hash=$3
+  local branch=$4
   local opt=".id=0"
   local orig="$opt"
   if [ ! -z "$packname" ]; then
     [ ! -z "$src" ] && opt="$opt | .feeds.$packname.source=\"$src\""
     opt="$opt | .feeds.$packname.hash=\"$hash\""
+    [ ! -z "$branch" ] && opt="$opt | .feeds.$packname.branch=\"$branch\""
     [ $verbose == true ] && lang "feeds name   : $packname" "feeds 名 称 : $packname"
     [ $verbose == true ] && lang "feeds source : $src" "feeds 数据源: $src"
     [ $verbose == true ] && lang "feeds commit : $hash" "feeds 标 记 : $hash"
+    [ $verbose == true ] && lang "feeds branch : $branch" "feeds 分 支 : $branch"
     [ "$orig" != "$opt" ] && ( \
         tmp=$(echo "$cfg" | jq "$opt"); \
         echo $tmp > $ppath; \
@@ -72,6 +83,7 @@ function load_hard_profile()
   [ -f $ppath ] && cfg=$(cat $ppath) || cfg="{}"
   [ -z "$cfg" ] && cfg="{}"
   op_hp=$(tmp=$(echo "$cfg" | jq ".profile_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_bp=$(tmp=$(echo "$cfg" | jq ".board_type" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_bn=$(tmp=$(echo "$cfg" | jq ".board_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_bt=$(tmp=$(echo "$cfg" | jq ".board_tag" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_pn=$(tmp=$(echo "$cfg" | jq ".project_name" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
@@ -81,27 +93,39 @@ function load_hard_profile()
   op_tl=$(tmp=$(echo "$cfg" | jq ".tftp_link" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_bf=$(tmp=$(echo "$cfg" | jq ".bin_file" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_ud=$(tmp=$(echo "$cfg" | jq ".usb_dev" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_rr=$(tmp=$(echo "$cfg" | jq ".remote.root" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_lr=$(tmp=$(echo "$cfg" | jq ".local.root" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+
   op_pbc=$(tmp=$(echo "$cfg" | jq ".project.boardchip" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_pbt=$(tmp=$(echo "$cfg" | jq ".project.boardtype" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_pbn=$(tmp=$(echo "$cfg" | jq ".project.boardname" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_pbv=$(tmp=$(echo "$cfg" | jq ".project.boardver" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_pbd=$(tmp=$(echo "$cfg" | jq ".project.boarddate" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+
   op_uu=$(tmp=$(echo "$cfg" | jq ".upgrade.url" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
   op_ua=$(tmp=$(echo "$cfg" | jq ".upgrade.useragent" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
-  op_rh=$(tmp=$(echo "$cfg" | jq ".release_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
-  op_bh=$(tmp=$(echo "$cfg" | jq ".beta_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
-  op_ch=$(tmp=$(echo "$cfg" | jq ".current_hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_rh=$(tmp=$(echo "$cfg" | jq ".release.hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_rb=$(tmp=$(echo "$cfg" | jq ".release.branch" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_bh=$(tmp=$(echo "$cfg" | jq ".beta.hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_bb=$(tmp=$(echo "$cfg" | jq ".beta.branch" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_ch=$(tmp=$(echo "$cfg" | jq ".current.hash" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_cb=$(tmp=$(echo "$cfg" | jq ".current.branch" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  op_lb=$(tmp=$(echo "$cfg" | jq ".last.branch" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+
   #$([ $(tmp=$(echo "$cfg" | jq ".usb_dev" -r);echo "$tmp") != "null" ] && echo $tmp || echo "")
 }
 
 function copy_config_var()
 {
   [ "$usb_dev" == "def" ] && usb_dev="-"
+  #[ "$remote_root" == "def" ] && remote_root="-"
+  #[ "$local_root" == "def" ] && local_root="-"
   [ "$release_hash" == "def" ] && release_hash="-"
   [ "$beta_hash" == "def" ] && beta_hash="-"
   [ "$current_hash" == "def" ] && current_hash="-"
   [ "$bin_file" == "def" ] && bin_file="-"
   [ ! -z "$op_hp" -a "$hard_profile" == ".hardware" -a "$op_hp" != ".hardware" ] && hard_profile=$op_hp
+  [ ! -z "$op_bp" -a -z "$board_type" ] && board_type=$op_bp
   [ ! -z "$op_bn" -a -z "$board_name" ] && board_name=$op_bn
   [ ! -z "$op_bt" -a -z "$board_tag" ] && board_tag=$op_bt
   [ ! -z "$op_pn" -a -z "$project_name" ] && project_name=$op_pn
@@ -111,16 +135,24 @@ function copy_config_var()
   [ ! -z "$op_tl" -a -z "$tftp_link" ] && tftp_link=$op_tl
   [ ! -z "$op_bf" -a -z "$bin_file" -o "$bin_file" == "-" ] && bin_file=$op_bf
   [ ! -z "$op_ud" -a -z "$usb_dev" -o "$usb_dev" == "-" ] && usb_dev=$op_ud
+  [ ! -z "$op_rr" -a -z "$remote_root" -o "$remote_root" == "-" ] && remote_root=$op_rr
+  [ ! -z "$op_lr" -a -z "$local_root" -o "$local_root" == "-" ] && local_root=$op_lr
+
   [ ! -z "$op_pbc" -a -z "$project_boardchip" -o "$project_boardchip" == "-" ] && project_boardchip=$op_pbc
   [ ! -z "$op_pbt" -a -z "$project_boardtype" -o "$project_boardtype" == "-" ] && project_boardtype=$op_pbt
   [ ! -z "$op_pbn" -a -z "$project_boardname" -o "$project_boardname" == "-" ] && project_boardname=$op_pbn
   [ ! -z "$op_pbv" -a -z "$project_boardver" -o "$project_boardver" == "-" ] && project_boardver=$op_pbv
   [ ! -z "$op_pbd" -a -z "$project_boarddate" -o "$project_boarddate" == "-" ] && project_boarddate=$op_pbd
+
   [ ! -z "$op_uu" -a -z "$upgrade_url" -o "$upgrade_url" == "-" ] && upgrade_url=$op_uu
   [ ! -z "$op_ua" -a -z "$upgrade_user_agent" -o "$upgrade_user_agent" == "-" ] && upgrade_user_agent=$op_ua
   [ ! -z "$op_rh" -a -z "$release_hash" -o "$release_hash" == "-" ] && release_hash=$op_rh
+  [ ! -z "$op_rb" -a -z "$release_branch" -o "$release_branch" == "-" ] && release_branch=$op_rb
   [ ! -z "$op_bh" -a -z "$beta_hash" -o "$beta_hash" == "-" ] && beta_hash=$op_bh
-  [ ! -z "$op_bh" -a -z "$current_hash" -o "$current_hash" == "-" ] && current_hash=$op_ch
+  [ ! -z "$op_bb" -a -z "$beta_branch" -o "$beta_branch" == "-" ] && beta_branch=$op_bb
+  [ ! -z "$op_ch" -a -z "$current_hash" -o "$current_hash" == "-" ] && current_hash=$op_ch
+  [ ! -z "$op_cb" -a -z "$current_branch" -o "$current_branch" == "-" ] && current_branch=$op_cb
+  [ ! -z "$op_lb" -a -z "$last_branch" -o "$last_branch" == "-" ] && last_branch=$op_lb
 }
 
 function save_hard_profile()
@@ -130,6 +162,7 @@ function save_hard_profile()
   local cfg=""
   [ "$op_hp" != "$hard_profile" -a ! -z "$hard_profile" -a "$hard_profile" != ".hardware" ] && opt="$opt | .profile_name=
   \"$hard_profile\""
+  [ "$op_bp" != "$board_type" -a ! -z "$board_type" ] && opt="$opt | .board_type=\"$board_type\""
   [ "$op_bn" != "$board_name" -a ! -z "$board_name" ] && opt="$opt | .board_name=\"$board_name\""
   [ "$op_bt" != "$board_tag" -a ! -z "$board_tag" ] && opt="$opt | .board_tag=\"$board_tag\""
   [ "$op_pn" != "$project_name" -a ! -z "$project_name" ] && opt="$opt | .project_name=\"$project_name\""
@@ -139,16 +172,24 @@ function save_hard_profile()
   [ "$op_tl" != "$tftp_link" -a ! -z "$tftp_link" ] && opt="$opt | .tftp_link=\"$tftp_link\""
   [ "$op_bf" != "$bin_file" ] && opt="$opt | .bin_file=\"$bin_file\""
   [ "$op_ud" != "$usb_dev" ] && opt="$opt | .usb_dev=\"$usb_dev\""
+  [ "$op_rr" != "$remote_root" ] && opt="$opt | .remote.root=\"$remote_root\""
+  [ "$op_lr" != "$local_root" ] && opt="$opt | .local.root=\"$local_root\""
+
   [ "$op_pbc" != "$project_boardchip" ] && opt="$opt | .project.boardchip=\"$project_boardchip\""
   [ "$op_pbt" != "$project_boardtype" ] && opt="$opt | .project.boardtype=\"$project_boardtype\""
   [ "$op_pbn" != "$project_boardname" ] && opt="$opt | .project.boardname=\"$project_boardname\""
   [ "$op_pbv" != "$project_boardver" ] && opt="$opt | .project.boardver=\"$project_boardver\""
   [ "$op_pbd" != "$project_boarddate" ] && opt="$opt | .project.boarddate=\"$project_boarddate\""
+
   [ "$op_uu" != "$upgrade_url" ] && opt="$opt | .upgrade.url=\"$upgrade_url\""
   [ "$op_ua" != "$upgrade_user_agent" ] && opt="$opt | .upgrade.useragent=\"$upgrade_user_agent\""
-  [ "$op_rh" != "$release_hash" ] && opt="$opt | .release_hash=\"$release_hash\""
-  [ "$op_ud" != "$beta_hash" ] && opt="$opt | .beta_hash=\"$beta_hash\""
-  [ "$op_ch" != "$current_hash" ] && opt="$opt | .current_hash=\"$current_hash\""
+  [ "$op_rh" != "$release_hash" ] && opt="$opt | .release.hash=\"$release_hash\""
+  [ "$op_rb" != "$release_branch" ] && opt="$opt | .release.branch=\"$release_branch\""
+  [ "$op_bh" != "$beta_hash" ] && opt="$opt | .beta.hash=\"$beta_hash\""
+  [ "$op_bb" != "$beta_branch" ] && opt="$opt | .beta.branch=\"$beta_branch\""
+  [ "$op_ch" != "$current_hash" ] && opt="$opt | .current.hash=\"$current_hash\""
+  [ "$op_cb" != "$current_branch" ] && opt="$opt | .current.branch=\"$current_branch\""
+  [ "$op_lb" != "$last_branch" ] && opt="$opt | .last.branch=\"$last_branch\""
   local ppath=$(get_profile_path)
   [ -f $ppath ] && cfg=$(cat $ppath)
   [ -z "$cfg" ] && cfg="{}"
@@ -169,6 +210,7 @@ function show_config_var()
   if [ $verbose == false ]; then
     echo " profile path       :" $ppath
     echo " profile_name       :" $profile_name
+    echo " board_type         :" $board_type
     echo " board_name         :" $board_name
     echo " board_tag          :" $board_tag
     echo " project_name       :" $project_name
@@ -178,19 +220,27 @@ function show_config_var()
     echo " tftp_link          :" $tftp_link
     echo " bin_file           :" $bin_file
     echo " usb_dev            :" $usb_dev
+    echo " remote_root        :" $remote_root
+    echo " local_root         :" $local_root
     echo " project.boardchip  :" $project_boardchip
     echo " project.boardtype  :" $project_boardtype
     echo " project.boardname  :" $project_boardname
     echo " project.boardver   :" $project_boardver
     echo " project.boarddate  :" $project_boarddate
+
     echo " upgrade.url        :" $upgrade_url
     echo " upgrade.useragent  :" $upgrade_user_agent
-    echo " release_hash       :" $release_hash
-    echo " beta_hash          :" $beta_hash
-    echo " current_hash       :" $current_hash
+    echo " release.hash       :" $release_hash
+    echo " release.branch     :" $release_branch
+    echo " beta.hash          :" $beta_hash
+    echo " beta.branch        :" $beta_branch
+    echo " current.hash       :" $current_hash
+    echo " current.branch     :" $current_branch
+    echo " last.branch        :" $last_branch
   else
     echo " profile path       :" $ppath
     echo " profile_name       :" $profile_name        "($op_hp)"
+    echo " board_type         :" $board_type          "($op_bp)"
     echo " board_name         :" $board_name          "($op_bn)"
     echo " board_tag          :" $board_tag           "($op_bt)"
     echo " project_name       :" $project_name        "($op_pn)"
@@ -200,6 +250,8 @@ function show_config_var()
     echo " tftp_link          :" $tftp_link           "($op_tl)"
     echo " bin_file           :" $bin_file            "($op_bf)"
     echo " usb_dev            :" $usb_dev             "($op_ud)"
+    echo " remote_root        :" $remote_root         "($op_rr)"
+    echo " local_root         :" $local_root          "($op_lr)"
     echo " project.boardchip  :" $project_boardchip   "($op_pbc)"
     echo " project.boardtype  :" $project_boardtype   "($op_pbt)"
     echo " project.boardname  :" $project_boardname   "($op_pbn)"
@@ -207,9 +259,13 @@ function show_config_var()
     echo " project.boarddate  :" $project_boarddate   "($op_pbd)"
     echo " upgrade.url        :" $upgrade_url         "($op_uu)"
     echo " upgrade.useragent  :" $upgrade_user_agent  "($op_ua)"
-    echo " release_hash       :" $release_hash        "($op_rh)"
-    echo " beta_hash          :" $beta_hash           "($op_bh)"
-    echo " current_hash       :" $current_hash        "($op_ch)"
+    echo " release.hash       :" $release_hash        "($op_rh)"
+    echo " release.branch     :" $release_branch      "($op_rb)"
+    echo " beta.hash          :" $beta_hash           "($op_bh)"
+    echo " beta.branch        :" $beta_branch         "($op_bb)"
+    echo " current.hash       :" $current_hash        "($op_ch)"
+    echo " current.branch     :" $current_branch      "($op_cb)"
+    echo " last.branch        :" $last_branch         "($op_lb)"
   fi
   show l
 }
@@ -273,6 +329,7 @@ function action_set_default_config()
 {
   show i $(lang "list hardware profiles:" "设置默认配置")
   #hard_profile="default"
+  board_type="wrtoy"
   board_name="wrtoy"
   board_tag="WRTOY"
   project_name="mtall"
@@ -281,6 +338,8 @@ function action_set_default_config()
   tftp_root="$op_tl_dir"
   tftp_link="wrtbin"
   usb_dev=""
+  remote_root=""
+  local_root=""
   project_boardchip=""
   project_boardtype=""
   project_boardname=""
@@ -289,8 +348,12 @@ function action_set_default_config()
   upgrade_url=""
   upgrade_user_agent=""
   release_hash=""
+  release_branch=""
   beta_hash=""
+  beta_branch=""
   current_hash=""
+  current_branch=""
+  last_branch=""
 }
 
 function action_list_feeds()
@@ -303,14 +366,17 @@ function action_list_feeds()
   local feed_name
   local feed_src
   local feed_hash
+  local feed_branch
   show l
   for((i=0;i<$flen;i++))
   do
     feed_name=$(echo "$cfg" | jq ".feeds | keys | .[$i]" -r)
     feed_src=$(echo "$cfg" | jq ".feeds.$feed_name.source" -r)
     feed_hash=$(echo "$cfg" | jq ".feeds.$feed_name.hash" -r)
+    feed_branch=$(echo "$cfg" | jq ".feeds.$feed_name.branch" -r)
     [ "$feed_hash" == "null" ] && feed_hash=""
-    echo " $i.[$feed_name] $feed_src $feed_hash"
+    [ "$feed_branch" == "null" ] && feed_branch=""
+    echo " $i.[$feed_name] $feed_src $feed_branch $feed_hash "
     show l
   done
 }
@@ -319,13 +385,13 @@ function action_add_feeds()
 {
   show i $(lang "add feeds new config:" "增加新feeds配置信息")
   [ -z "$feeds_source" ] && lang "no feeds source" "没有feeds数据源"
-  [ ! -z "$add_feeds" ] && set_feed_config_var "$add_feeds" "$feeds_source" "$feeds_hash"
+  [ ! -z "$add_feeds" ] && set_feed_config_var "$add_feeds" "$feeds_source" "$feeds_hash" "$feeds_branch"
 }
 
 function action_edit_feeds()
 {
   show i $(lang "edit feeds config:" "编辑feeds配置信息")
-  [ ! -z "$edit_feeds" ] && set_feed_config_var "$edit_feeds" "$feeds_source" "$feeds_hash"
+  [ ! -z "$edit_feeds" ] && set_feed_config_var "$edit_feeds" "$feeds_source" "$feeds_hash" "$feeds_branch"
 }
 
 function action_del_feeds()
@@ -352,7 +418,7 @@ function show_cfg_var()
 {
   local tag
   [ ! -z "$2" -a $verbose == true ] && tag="$2="
-  [ -z "$1" -o "$1" == " " ] && echo "$tag" || echo "$tag$1"
+  [ -z "$1" -o "$1" == " " ] && echo "$tag$3" || echo "$tag$1"
 }
 
 function action_get_cfg_var()
@@ -360,6 +426,12 @@ function action_get_cfg_var()
   [ ! -f "./.hardware" ] && exit 0
   load_hard_profile
   [ -z "$get_variable" -o "$get_variable" == "-" ] && get_variable="all"
+  [ "$get_variable" == "bp" -o \
+    "$get_variable" == "boardtype" -o \
+    "$get_variable" == "board_type" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_bp" "board_type"
+
   [ "$get_variable" == "bn" -o \
     "$get_variable" == "boardname" -o \
     "$get_variable" == "board_name" -o \
@@ -406,6 +478,18 @@ function action_get_cfg_var()
     "$get_variable" == "usb_dev" -o \
     "$get_variable" == "all" ] && \
     show_cfg_var "$op_ud" "usb_dev"
+
+  [ "$get_variable" == "rr" -o \
+    "$get_variable" == "remoteroot" -o \
+    "$get_variable" == "remote_root" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_rr" "remote_root"
+
+  [ "$get_variable" == "lr" -o \
+    "$get_variable" == "localroot" -o \
+    "$get_variable" == "local_root" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_lr" "local_root"
 
   [ "$get_variable" == "pbc" -o \
     "$get_variable" == "projectboardchip" -o \
@@ -459,20 +543,51 @@ function action_get_cfg_var()
   [ "$get_variable" == "rh" -o \
     "$get_variable" == "releasehash" -o \
     "$get_variable" == "release_hash" -o \
+    "$get_variable" == "release.hash" -o \
     "$get_variable" == "all" ] && \
     show_cfg_var "$op_rh" "release_hash"
+
+  [ "$get_variable" == "rb" -o \
+    "$get_variable" == "releasebranch" -o \
+    "$get_variable" == "release_branch" -o \
+    "$get_variable" == "release.branch" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_rb" "release_branch" "master"
 
   [ "$get_variable" == "bh" -o \
     "$get_variable" == "betahash" -o \
     "$get_variable" == "beta_hash" -o \
+    "$get_variable" == "beta.hash" -o \
     "$get_variable" == "all" ] && \
     show_cfg_var "$op_bh" "beta_hash"
+
+  [ "$get_variable" == "bb" -o \
+    "$get_variable" == "betabranch" -o \
+    "$get_variable" == "beta_branch" -o \
+    "$get_variable" == "beta.branch" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_bb" "beta_branch" "master"
 
   [ "$get_variable" == "ch" -o \
     "$get_variable" == "currenthash" -o \
     "$get_variable" == "current_hash" -o \
+    "$get_variable" == "current.hash" -o \
     "$get_variable" == "all" ] && \
     show_cfg_var "$op_ch" "current_hash"
+
+  [ "$get_variable" == "cb" -o \
+    "$get_variable" == "currentbranch" -o \
+    "$get_variable" == "current_branch" -o \
+    "$get_variable" == "current.branch" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_cb" "current_branch" "master"
+
+  [ "$get_variable" == "lb" -o \
+    "$get_variable" == "lastbranch" -o \
+    "$get_variable" == "last_branch" -o \
+    "$get_variable" == "last.branch" -o \
+    "$get_variable" == "all" ] && \
+    show_cfg_var "$op_lb" "last_branch" "master"
 
   if [ "$get_variable" == "bf" -o \
     "$get_variable" == "binfile" -o \
@@ -511,6 +626,15 @@ help_hard_profile=$(lang \
 addOption -hp   --hardware-profile \
   dest=hard_profile \
   help="$help_hard_profile"
+
+#======================================================
+help_board_type=$(lang \
+  "set board type" \
+  "设置硬件主板类型")
+
+addOption -bp   --board-type \
+  dest=board_type \
+  help="$help_board_type"
 
 #======================================================
 help_board_name=$(lang \
@@ -583,6 +707,24 @@ help_usb_dev=$(lang \
 addOption -ud   --usb-dev \
   default=- dest=usb_dev \
   help="$help_usb_dev"
+
+#======================================================
+help_remote_root=$(lang \
+  "set firmware upgrade remote root directory" \
+  "设置固件远程更新上传的服务器路径")
+
+addOption -rr   --remote-root \
+  default=- dest=remote_root \
+  help="$help_remote_root"
+
+#======================================================
+help_local_root=$(lang \
+  "set firmware upgrade local root directory" \
+  "设置固件远程更新上传的服务器路径的本地映射目录")
+
+addOption -lr   --local-root \
+  default=- dest=local_root \
+  help="$help_local_root"
 
 #======================================================
 help_project_boardchip=$(lang \
@@ -658,6 +800,16 @@ addOption -rh   --release-hash \
   help="$help_release_hash"
 
 #======================================================
+
+help_release_branch=$(lang \
+  "set openwrt release build branch" \
+  "设置openwrt发布版构建branch")
+
+addOption -rb   --release-branch \
+  default=- dest=release_branch \
+  help="$help_release_branch"
+
+#======================================================
 help_beta_hash=$(lang \
   "set openwrt beta build hash" \
   "设置openwrt测试版构建hash")
@@ -667,6 +819,15 @@ addOption -bh   --beta-hash \
   help="$help_beta_hash"
 
 #======================================================
+help_beta_branch=$(lang \
+  "set openwrt beta build branch" \
+  "设置openwrt测试版构建branch")
+
+addOption -bb   --beta-branch \
+  default=- dest=beta_branch \
+  help="$help_beta_branch"
+
+#======================================================
 help_current_hash=$(lang \
   "set openwrt current/work build hash" \
   "设置openwrt当前/工作版本构建hash")
@@ -674,6 +835,24 @@ help_current_hash=$(lang \
 addOption -ch   --current-hash \
   default=- dest=current_hash \
   help="$help_current_hash"
+
+#======================================================
+help_current_branch=$(lang \
+  "set openwrt current/work build branch" \
+  "设置openwrt当前/工作版本构建branch")
+
+addOption -cb   --current-branch \
+  default=- dest=current_branch \
+  help="$help_current_branch"
+
+#======================================================
+help_last_branch=$(lang \
+  "set openwrt current/work build last branch" \
+  "设置openwrt当前/工作版本构建branch")
+
+addOption -lb   --last-branch \
+  default=- dest=last_branch \
+  help="$help_last_branch"
 
 #======================================================
 help_bin_file=$(lang \
@@ -737,6 +916,15 @@ help_feeds_hash=$(lang \
 addOption -fh   --feeds-hash \
   dest=feeds_hash \
   help="$help_feeds_hash"
+
+#======================================================
+help_feeds_branch=$(lang \
+  "set feeds git branch" \
+  "设置feeds的库git版本branch分支")
+
+addOption -fb   --feeds-branch \
+  dest=feeds_branch \
+  help="$help_feeds_branch"
 
 #======================================================
 help_get_var=$(lang \

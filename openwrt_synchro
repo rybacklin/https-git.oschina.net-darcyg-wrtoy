@@ -17,6 +17,8 @@ function check_wrtoy_sys_paths()
   chk_mkdir $rootdir/feeds
   chk_mkdir $rootdir/feeds/rep
   chk_mkdir $rootdir/feeds.git
+  chk_mkdir $rootdir/boards
+  chk_mkdir $rootdir/hosts
 }
 
 function upgrade_wrtoy_git_project()
@@ -24,6 +26,7 @@ function upgrade_wrtoy_git_project()
   local rootdir=$op_wrtoy_dir
   local project=$1
   local giturl=$2
+  local gitbranch=$3
 
   if [ -d "$rootdir" ]; then
     if [ "$project" == "openwrt" ]; then
@@ -31,9 +34,14 @@ function upgrade_wrtoy_git_project()
       if [ ! -d $rootdir/$project.git -a ! -d $rootdir/$project.git/.git -a ! -f $rootdir/README ]; then
         show i $(lang "clone $project." "克隆 $project")
         git clone $giturl $project.git
+        [ -z "$gitbranch" ] && gitbranch=master
+        cd $project.git
+        git checkout $gitbranch
       else
         show i $(lang "upgrade $project." "更新 $project")
         cd $project.git
+        [ -z "$gitbranch" ] && gitbranch=master
+        git checkout $gitbranch
         git pull
       fi
     else
@@ -41,9 +49,12 @@ function upgrade_wrtoy_git_project()
       if [ ! -d $rootdir/feeds.git/$project.git -a ! -d $rootdir/feeds.git/$project.git/.git ]; then
         show i $(lang "clone $project." "克隆 $project")
         git clone $giturl $project.git
+        cd $project.git
+        [ -n "$gitbranch" ] && git checkout $gitbranch
       else
         show i $(lang "upgrade $project." "更新 $project")
         cd $project.git
+        [ -n "$gitbranch" ] && git checkout $gitbranch
         git pull
       fi
     fi
@@ -154,18 +165,25 @@ function upgrade_openwrt_source()
     echo "{}"
   fi
   local mode=$1
+  local br=
   if [ "$mode" == "release" -o "$mode" == "rh" -o "$mode" == "r" ]; then
-    mode="release_hash"
+    mode="release.hash"
+    br="release.branch"
   elif [ "$mode" == "beta" -o "$mode" == "bh" -o "$mode" == "b" ]; then
-    mode="beta_hash"
+    mode="beta.hash"
+    br="beta.branch"
   elif [ "$mode" == "current" -o "$mode" == "ch" -o "$mode" == "c" ]; then
-    mode="current_hash"
+    mode="current.hash"
+    br="current.branch"
   else
     mode="lastgit"
+    br="last.branch"
   fi
   #$(echo "$cfg" | jq ".$mode" -r)
   local hash=$(tmp=$(echo "$cfg" | jq ".$mode" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
-  upgrade_wrtoy_git_project openwrt http://git.openwrt.org/openwrt.git
+  local branch=
+  [ -n "$br" ] && branch=$(tmp=$(echo "$cfg" | jq ".$br" -r);[ "$tmp" != "null" ] && echo "$tmp" || echo "")
+  upgrade_wrtoy_git_project openwrt http://git.openwrt.org/openwrt.git $branch
   export_wrtoyg_git_project openwrt "$hash"
   #export_wrtoyg_git_project openwrt "006d662b38c42749ec0feb4b8bd407b0fd453a74"
   #export_wrtoyg_git_project openwrt "d084b0cc0fecec5645c27e5482d4adcf193d1ab1"
@@ -174,7 +192,7 @@ function upgrade_openwrt_source()
 function upgrade_feeds_source()
 {
   if [ ! -z "$1" -a ! -z "$2" ]; then
-    upgrade_wrtoy_git_project "$1" "$2"
+    upgrade_wrtoy_git_project "$1" "$2" "$4"
     export_wrtoyg_git_project "$1" "$3"
   fi
 }
@@ -194,15 +212,18 @@ function upgrade_all_feeds_source()
   local feed_name
   local feed_src
   local feed_hash
+  local feed_branch
   show l
   for((i=0;i<$flen;i++))
   do
     feed_name=$(echo "$cfg" | jq ".feeds | keys | .[$i]" -r)
     feed_src=$(echo "$cfg" | jq ".feeds.$feed_name.source" -r)
     feed_hash=$(echo "$cfg" | jq ".feeds.$feed_name.hash" -r)
+    feed_branch=$(echo "$cfg" | jq ".feeds.$feed_name.branch" -r)
     [ "$feed_hash" == "null" ] && feed_hash=""
-    echo " $i.[$feed_name] $feed_src $feed_hash"
-    upgrade_feeds_source "$feed_name" "$feed_src" "$feed_hash"
+    [ "$feed_branch" == "null" ] && feed_branch=""
+    echo " $i.[$feed_name] $feed_src $feed_hash $feed_branch"
+    upgrade_feeds_source "$feed_name" "$feed_src" "$feed_hash" "$feed_branch"
     show l
   done
 }
